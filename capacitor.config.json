@@ -1,0 +1,8 @@
+{
+  "appId": "com.elysion.duo",
+  "appName": "Elysion",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  }
+}
