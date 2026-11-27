@@ -92,14 +92,14 @@ public class MainActivity extends BridgeActivity {
 }
 """)
 
-# 5. Configure permanent signing keystore, versionCode 23, versionName 1.9, and androidx.media
+# 5. Configure permanent signing keystore, versionCode 24, versionName 1.9, and androidx.media
 if os.path.exists('android-native/elysion.keystore'):
     shutil.copy('android-native/elysion.keystore', 'android/app/elysion.keystore')
 
 bg = 'android/app/build.gradle'
 s = open(bg).read()
-s = re.sub(r'versionCode\s+\d+', 'versionCode 23', s)
-s = re.sub(r'versionName\s+"[^"]+"', 'versionName "2.3"', s)
+s = re.sub(r'versionCode\s+\d+', 'versionCode 24', s)
+s = re.sub(r'versionName\s+"[^"]+"', 'versionName "2.4"', s)
 if 'androidx.media:media:' not in s:
     s = s.replace('dependencies {', 'dependencies {\n    implementation "androidx.media:media:1.7.0"')
 if 'elysion.keystore' not in s and os.path.exists('android/app/elysion.keystore'):
@@ -135,4 +135,4 @@ svc = """
 if 'ElysionMediaService' not in ms:
     ms = ms.replace('</application>', svc)
 open(mf, 'w').write(ms)
-print('ANDROID PATCH V2.3 OK (EDGE-TO-EDGE + PERMANENT KEYSTORE)')
+print('ANDROID PATCH V2.4 OK (EDGE-TO-EDGE + PERMANENT KEYSTORE)')

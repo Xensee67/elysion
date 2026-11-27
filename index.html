@@ -77,14 +77,11 @@
                   var(--bg-0);
       transition: background 0.7s ease;
     }
-    .mesh-orb { position: absolute; border-radius: 9999px; filter: blur(90px); opacity: 0.34; animation: orbFloat 16s ease-in-out infinite alternate; transition: background 0.8s ease; }
-    .mesh-orb-1 { width: 320px; height: 320px; top: -80px; left: -60px; background: var(--mesh-a); }
-    .mesh-orb-2 { width: 300px; height: 300px; bottom: 8%; right: -80px; background: var(--mesh-b); animation-delay: -6s; }
-    @keyframes orbFloat { 0% { transform: translate3d(0,0,0) scale(1); } 100% { transform: translate3d(26px,28px,0) scale(1.12); } }
-
-    .glass-card { background: rgba(255,255,255,0.055); border: 1px solid rgba(255,255,255,0.09); backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); }
-    .glass-soft { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.075); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
-    .glass-dock { background: rgba(14,10,26,0.90); border: 1px solid rgba(255,255,255,0.11); backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px); box-shadow: 0 14px 40px rgba(0,0,0,0.62); }
+    /* v2.4 Ice-Cold Engine: zero heavy blur(90px) orbs & zero per-row backdrop-filter! */
+    .mesh-orb { display: none !important; }
+    .glass-card { background: rgba(255,255,255,0.065); border: 1px solid rgba(255,255,255,0.10); }
+    .glass-soft { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); }
+    .glass-dock { background: rgba(14,10,26,0.88); border: 1px solid rgba(255,255,255,0.11); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); box-shadow: 0 14px 40px rgba(0,0,0,0.62); }
     .accent-grad { background: linear-gradient(135deg, var(--accent-1), var(--accent-2)); }
 
     /* Unified SVG Icon Badge */
@@ -131,8 +128,8 @@
     /* Unified Bottom Dock */
     #bottom-dock-shell {
       position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
-      padding: 10px 12px max(10px, calc(var(--safe-bottom) - 12px)) 12px;
-      background: linear-gradient(to top, rgba(7,4,15,0.98) 62%, rgba(7,4,15,0.72) 86%, transparent 100%);
+      padding: 6px 12px max(6px, calc(var(--safe-bottom) - 24px)) 12px;
+      background: linear-gradient(to top, rgba(7,4,15,0.76) 0%, rgba(7,4,15,0.28) 58%, transparent 100%);
       pointer-events: none;
     }
     @media (min-width: 768px) { #bottom-dock-shell { left: 256px; padding: 12px 24px 18px 24px; background: none; } }
@@ -183,7 +180,7 @@
     .player-inner {
       position: relative; z-index: 2; width: 100%; max-width: 440px; height: 100%; margin: 0 auto;
       display: flex; flex-direction: column; justify-content: space-between;
-      padding: calc(10px + var(--safe-top)) 20px max(12px, calc(var(--safe-bottom) - 10px)) 20px;
+      padding: calc(10px + var(--safe-top)) 20px max(10px, calc(var(--safe-bottom) - 22px)) 20px;
       overflow: hidden;
     }
 
@@ -361,17 +358,19 @@
     #mini-progress-track { position: absolute; top: 0; left: 10px; right: 10px; height: 2px; background: rgba(255,255,255,0.08); border-radius: 999px; overflow: hidden; pointer-events: none; z-index: 5; }
     #mini-progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent-1), var(--accent-2)); border-radius: 999px; transition: width 180ms linear; }
 
-    /* v2.3: True Visible Ambient Cover Glow behind Player Cover */
-    #player-cover-frame { isolation: isolate; }
-    #player-cover-glow {
-      position: absolute; inset: -28px; border-radius: 44px; z-index: -1; pointer-events: none;
-      background: radial-gradient(circle at 30% 25%, var(--mesh-a) 0%, transparent 66%),
-                  radial-gradient(circle at 75% 78%, var(--mesh-b) 0%, transparent 66%),
-                  radial-gradient(circle at 50% 50%, var(--accent-2) 0%, transparent 72%);
-      filter: blur(36px) saturate(1.55); opacity: 0.85; transform: scale(1.04);
-      transition: opacity 420ms ease, transform 420ms cubic-bezier(0.22,1,0.36,1);
+    /* v2.4: Seamless Fullscreen Radial Cover Halo (zero clipped square, 0% blur heat!) */
+    .player-mesh-layer {
+      background:
+        radial-gradient(circle at 50% 36%, color-mix(in srgb, var(--mesh-a) 74%, transparent) 0%, transparent 52%),
+        radial-gradient(circle at 22% 18%, color-mix(in srgb, var(--mesh-a) 48%, transparent) 0%, transparent 62%),
+        radial-gradient(circle at 82% 72%, color-mix(in srgb, var(--mesh-b) 48%, transparent) 0%, transparent 64%),
+        radial-gradient(circle at 50% 48%, color-mix(in srgb, var(--mesh-c) 46%, transparent) 0%, transparent 72%),
+        linear-gradient(to bottom, rgba(8,5,16,0.22) 0%, rgba(8,5,16,0.82) 100%),
+        #080510;
+      opacity: 0.72;
+      transition: background 0.5s ease, opacity 0.4s ease;
     }
-    .player-cover-frame.is-paused #player-cover-glow { opacity: 0.16; transform: scale(0.88); }
+    #player-sheet.is-playing .player-mesh-layer { opacity: 1; animation: none !important; }
 
     /* v2.3: Edge-to-Edge Elysion Glass Sticky Header (zero tracks peeking above!) */
     #pl-sticky-header {
@@ -419,6 +418,12 @@
     @supports (height: 100lvh) {
       #player-sheet { height: 100lvh; min-height: 100lvh; }
     }
+
+    /* v2.4: Fast list virtualization for 400-600+ tracks */
+    .track-row { content-visibility: auto; contain-intrinsic-size: 0 68px; }
+    #lib-alpha-bar { display: flex; gap: 4px; overflow-x: auto; padding: 2px 0 8px 0; }
+    .alpha-chip { min-width: 28px; height: 26px; padding: 0 7px; border-radius: 999px; background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.75); font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 150ms ease, transform 120ms ease; }
+    .alpha-chip:active { transform: scale(0.9); background: rgba(236,72,153,0.35); color: #fff; }
   </style>
 </head>
 <body class="app-booting">
@@ -557,6 +562,7 @@
             </button>
           </div>
         </div>
+        <div id="lib-alpha-bar" class="hidden no-scrollbar"></div>
         <div id="library-track-list" class="space-y-2"></div>
       </div>
     </section>
@@ -793,11 +799,12 @@
           <div id="artist-hero-stats" class="text-xs text-white/75 mt-1">0 треков в коллекции</div>
         </div>
       </div>
-      <div class="flex gap-2.5">
-        <button id="btn-artist-play-all" class="flex-1 py-3 rounded-full bg-white text-slate-950 text-xs font-extrabold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg><span>Слушать</span></button>
+      <div class="flex gap-2">
+        <button id="btn-artist-play-all" class="flex-1 py-3 rounded-full bg-white text-slate-950 text-xs font-extrabold flex items-center justify-center gap-1.5 shadow-lg active:scale-95 transition"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg><span>Слушать</span></button>
+        <button id="btn-artist-shuffle" class="w-11 h-11 rounded-full glass-card flex items-center justify-center text-white/90 active:scale-95 transition flex-shrink-0" title="Перемешать"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg></button>
         <button id="btn-artist-mix" class="flex-1 py-3 rounded-full glass-card text-xs font-bold flex items-center justify-center gap-1.5 active:scale-95 transition">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><path d="M12 3l1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2z"/></svg>
-          <span>Микс по артисту</span>
+          <span>Микс</span>
         </button>
       </div>
       <div class="space-y-5">
@@ -989,7 +996,7 @@
         <div id="cover-carousel-viewport">
           <div id="cover-carousel-track">
             <div class="carousel-side-card"><img id="player-prev-cover-img" src="" alt="" class="w-full h-full object-cover pointer-events-none" /></div>
-            <div id="player-cover-frame" class="player-cover-frame is-paused rounded-[28px] border border-white/15" style="overflow: visible;"><div id="player-cover-glow"></div><div class="w-full h-full rounded-[28px] overflow-hidden relative">
+            <div id="player-cover-frame" class="player-cover-frame is-paused rounded-[28px] overflow-hidden border border-white/15">
               <img id="player-cover-img" src="" alt="" class="w-full h-full object-cover pointer-events-none" />
               <div id="cover-dbltap-heart"><svg width="74" height="74" viewBox="0 0 24 24" fill="#EC4899"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></div>
               <div id="player-speed-badge" class="hidden absolute top-3 right-3 px-2.5 py-1 rounded-full bg-black/65 backdrop-blur-md text-[10px] font-bold text-white">1.0×</div>
@@ -997,7 +1004,7 @@
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
                 <span id="player-sleep-text"></span>
               </div>
-            </div></div>
+            </div>
             <div class="carousel-side-card"><img id="player-next-cover-img" src="" alt="" class="w-full h-full object-cover pointer-events-none" /></div>
           </div>
         </div>
@@ -1176,27 +1183,29 @@
     </div>
   </div>
 
-  <!-- SPRING SHEET: TRACK CONTEXT MENU -->
+  <!-- SPRING SHEET: TRACK CONTEXT MENU (v2.4 Sleek Elysion Glass) -->
   <div id="track-menu-modal" class="sheet-backdrop" style="z-index: 65;">
-    <div class="sheet-panel glass-dock space-y-3 no-scrollbar">
+    <div class="sheet-panel glass-dock space-y-3.5 no-scrollbar">
       <div class="w-10 h-1 rounded-full bg-white/20 mx-auto"></div>
-      <div class="flex items-center gap-3 pb-2 border-b border-white/10">
-        <img id="tm-cover" src="" alt="" class="w-12 h-12 rounded-xl object-cover" />
-        <div class="min-w-0 flex-1"><div id="tm-title" class="text-sm font-extrabold truncate">—</div><div id="tm-artist" class="text-xs text-white/55 truncate">—</div></div>
-        <button data-close-sheet="track-menu-modal" class="w-8 h-8 rounded-full bg-white/10 text-xs">✕</button>
+      <div class="flex items-center gap-3">
+        <img id="tm-cover" src="" alt="" class="w-12 h-12 rounded-2xl object-cover border border-white/10 flex-shrink-0" />
+        <div class="min-w-0 flex-1"><div id="tm-title" class="text-sm font-extrabold truncate">—</div><div id="tm-artist" class="text-xs text-white/55 truncate mt-0.5">—</div></div>
+        <button data-close-sheet="track-menu-modal" class="w-8 h-8 rounded-full bg-white/10 text-xs flex items-center justify-center flex-shrink-0">✕</button>
       </div>
-      <div class="space-y-1.5">
-        <button id="tm-play-next" class="w-full py-3 px-4 rounded-2xl bg-white/5 hover:bg-white/10 text-left text-xs font-bold flex items-center gap-3"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg><span>Играть следующим</span></button>
-        <button id="tm-add-queue" class="w-full py-3 px-4 rounded-2xl bg-white/5 hover:bg-white/10 text-left text-xs font-bold flex items-center gap-3"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="16" y2="18"/><line x1="19" y1="15" x2="19" y2="21"/><line x1="16" y1="18" x2="22" y2="18"/></svg><span>В конец очереди</span></button>
-        <button id="tm-edit-moment" class="w-full py-3 px-4 rounded-2xl bg-white/5 hover:bg-white/10 text-left text-xs font-bold flex items-center gap-3"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Оставить заметку (Наш момент)</span></button>
-        <button id="tm-pin-profile" class="w-full py-3 px-4 rounded-2xl bg-white/5 hover:bg-white/10 text-left text-xs font-bold flex items-center gap-3"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg><span>Закрепить в моём профиле</span></button>
-        <button id="tm-go-artist" class="w-full py-3 px-4 rounded-2xl bg-white/5 hover:bg-white/10 text-left text-xs font-bold flex items-center gap-3"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Перейти к исполнителю</span></button>
-        <button id="tm-add-playlist" class="w-full py-3 px-4 rounded-2xl bg-white/5 hover:bg-white/10 text-left text-xs font-bold flex items-center gap-3"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Добавить в плейлист</span></button>
-        <button id="tm-pick-cover" class="w-full py-3 px-4 rounded-2xl bg-white/5 hover:bg-white/10 text-left text-xs font-bold flex items-center gap-3"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>Сменить обложку</span></button>
-        <button id="tm-rename" class="w-full py-3 px-4 rounded-2xl bg-white/5 hover:bg-white/10 text-left text-xs font-bold flex items-center gap-3"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><span>Переименовать трек</span></button>
-        <button id="tm-delete" class="w-full py-3 px-4 rounded-2xl bg-rose-500/15 text-rose-300 border border-rose-400/20 text-left text-xs font-bold flex items-center gap-3"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg><span>Удалить трек из коллекции</span></button>
+      <div class="grid grid-cols-3 gap-2">
+        <button id="tm-play-next" class="py-3 px-2 rounded-2xl bg-white/10 hover:bg-white/15 flex flex-col items-center gap-1.5 text-[11px] font-bold text-white/90 active:scale-95 transition"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg><span>Следующим</span></button>
+        <button id="tm-add-queue" class="py-3 px-2 rounded-2xl bg-white/10 hover:bg-white/15 flex flex-col items-center gap-1.5 text-[11px] font-bold text-white/90 active:scale-95 transition"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="16" y2="18"/><line x1="19" y1="15" x2="19" y2="21"/><line x1="16" y1="18" x2="22" y2="18"/></svg><span>В очередь</span></button>
+        <button id="tm-add-playlist" class="py-3 px-2 rounded-2xl bg-white/10 hover:bg-white/15 flex flex-col items-center gap-1.5 text-[11px] font-bold text-white/90 active:scale-95 transition"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>В плейлист</span></button>
+      </div>
+      <div class="rounded-2xl bg-white/5 border border-white/10 divide-y divide-white/5 overflow-hidden">
+        <button id="tm-edit-moment" class="w-full py-3 px-4 hover:bg-white/10 text-left text-xs font-semibold flex items-center gap-3 active:bg-white/10 transition"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-pink-300"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Оставить заметку (Наш момент)</span></button>
+        <button id="tm-pin-profile" class="w-full py-3 px-4 hover:bg-white/10 text-left text-xs font-semibold flex items-center gap-3 active:bg-white/10 transition"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white/70"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg><span>Закрепить в профиле</span></button>
+        <button id="tm-go-artist" class="w-full py-3 px-4 hover:bg-white/10 text-left text-xs font-semibold flex items-center gap-3 active:bg-white/10 transition"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white/70"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Перейти к исполнителю</span></button>
+        <button id="tm-pick-cover" class="w-full py-3 px-4 hover:bg-white/10 text-left text-xs font-semibold flex items-center gap-3 active:bg-white/10 transition"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white/70"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>Сменить обложку</span></button>
+        <button id="tm-rename" class="w-full py-3 px-4 hover:bg-white/10 text-left text-xs font-semibold flex items-center gap-3 active:bg-white/10 transition"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white/70"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><span>Переименовать трек</span></button>
       </div>
       <div id="tm-playlist-picker" class="hidden pt-2 border-t border-white/10 space-y-1.5 max-h-44 overflow-y-auto no-scrollbar"></div>
+      <button id="tm-delete" class="w-full py-3 px-4 rounded-2xl bg-rose-500/15 text-rose-300 border border-rose-400/20 text-center text-xs font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg><span>Удалить из коллекции</span></button>
     </div>
   </div>
 
@@ -1602,7 +1611,13 @@
       return [pal.rgb1, pal.rgb2, pal.rgb3];
     }
 
-    function animateSharedWaveCanvas() {
+    let lastWaveDrawTs = 0;
+    function animateSharedWaveCanvas(nowTs = 0) {
+      if (document.hidden || state.playerOpen || state.activeView !== 'library' || (nowTs - lastWaveDrawTs < 34)) {
+        requestAnimationFrame(animateSharedWaveCanvas);
+        return;
+      }
+      lastWaveDrawTs = nowTs;
       const canvas = document.getElementById('wave-canvas');
       if (canvas && state.activeView === 'library' && !state.playerOpen && !document.hidden) {
         const rect = canvas.getBoundingClientRect();
@@ -2007,6 +2022,10 @@
     async function loadLyricsForTrack(track) {
       if (!track) return;
       const box = document.getElementById('lyrics-container');
+      if (!state._lyricsDiskLoaded) {
+        state._lyricsDiskLoaded = true;
+        try { Object.assign(state.lyricsCache, JSON.parse(localStorage.getItem('elysion_lyrics_disk_v1') || '{}')); } catch {}
+      }
       if (state.lyricsCache[track.id]) { state.currentLyrics = state.lyricsCache[track.id]; renderLyricsList(); return; }
       box.innerHTML = '<div class="py-12 text-center text-sm text-white/55">Ищу синхронизированный текст...</div>';
       try {
@@ -2028,6 +2047,13 @@
         }
         state.currentLyrics = { synced: best?.syncedLyrics ? parseLrc(best.syncedLyrics) : [], plain: best?.plainLyrics || '' };
         state.lyricsCache[track.id] = state.currentLyrics;
+        if (state.currentLyrics.synced.length || state.currentLyrics.plain) {
+          try {
+            const keys = Object.keys(state.lyricsCache);
+            if (keys.length > 80) delete state.lyricsCache[keys[0]];
+            localStorage.setItem('elysion_lyrics_disk_v1', JSON.stringify(state.lyricsCache));
+          } catch {}
+        }
       } catch { state.currentLyrics = { synced: [], plain: '' }; }
       renderLyricsList();
     }
@@ -2355,8 +2381,9 @@
       const head = document.getElementById('wave-head-glow');
       if (fill) fill.style.clipPath = `inset(0 ${((1 - pct) * 100).toFixed(3)}% 0 0)`;
       if (head) head.style.left = `${(pct * 100).toFixed(3)}%`;
-      document.getElementById('player-cur-time').textContent = formatTime(pct * dur);
-      document.getElementById('player-dur-time').textContent = formatTime(dur);
+      const curSecInt = Math.floor(pct * dur), durSecInt = Math.floor(dur);
+      if (curSecInt !== state._lastCurSec) { state._lastCurSec = curSecInt; document.getElementById('player-cur-time').textContent = formatTime(curSecInt); }
+      if (durSecInt !== state._lastDurSec) { state._lastDurSec = durSecInt; document.getElementById('player-dur-time').textContent = formatTime(durSecInt); }
     }
     function handleScrubPointer(clientX) {
       const rect = document.getElementById('waveform-scrubber').getBoundingClientRect();
@@ -2589,6 +2616,7 @@
       if (sortLbl) sortLbl.textContent = (SORT_OPTIONS.find(o => o.id === state.sortMode) || SORT_OPTIONS[0]).label;
       document.getElementById('tracks-count-label').textContent = `· ${visibleTracks.length}`;
       document.getElementById('library-track-list').innerHTML = visibleTracks.map(tr => buildTrackRowHtml(tr, 'all')).join('') || '<div class="py-8 text-center text-xs text-white/45">Треков пока нет</div>';
+      renderAlphaJumpBar(visibleTracks);
     }
 
     function renderPlaylistDetailView() {
@@ -2653,7 +2681,7 @@
       const name = state.activeArtistName; if (!name) return;
       const nl = name.toLowerCase();
       const tracks = state.tracks.filter(t => splitArtists(t.artist).some(a => a.toLowerCase() === nl) || t.artist.toLowerCase().includes(nl));
-      const matches = tracks.filter(t => t.likedHe && t.likedShe).length, listenSec = getMyStats().artistSec?.[name] || 0;
+      const matches = tracks.filter(t => t.likedHe && t.likedShe).length, listenSec = (getMyStats('he').artistSec?.[name] || 0) + (getMyStats('she').artistSec?.[name] || 0);
       document.getElementById('artist-hero-name').textContent = name;
       document.getElementById('artist-hero-img').src = state.artistPhotoCache[nl] || tracks[0]?.cover || FALLBACK_COVERS[0];
       document.getElementById('artist-hero-stats').textContent = `В коллекции: ${tracks.length} тр.` + (listenSec ? ` · Прослушано: ${formatListenDuration(listenSec)}` : '') + (matches ? ` · Совпадений: ${matches}` : '');
@@ -4147,34 +4175,6 @@
       closeSpringSheet('wave-settings-modal'); haptic(14); launchConfiguredWave();
     });
 
-    // Subtle audio-reactive pulse on Shared Wave Card while playing
-    (function wireWavePulse() {
-      const card = document.getElementById('shared-wave-card');
-      if (!card) return;
-      let t = 0;
-      const step = () => {
-        if (state.isPlaying && state.activeView === 'library' && !state.playerOpen) {
-          t += 0.045;
-          let energy = (Math.sin(t) + 1) * 0.5;
-          if (audioAnalyser) {
-            try {
-              const bins = new Uint8Array(audioAnalyser.frequencyBinCount);
-              audioAnalyser.getByteFrequencyData(bins);
-              const bass = (bins[0] + bins[1] + bins[2] + bins[3]) / (4 * 255);
-              if (bass > 0.01) energy = bass;
-            } catch {}
-          }
-          const pulse = 1 + energy * 0.026;
-          card.style.boxShadow = `0 12px ${Math.round(24 + energy * 24)}px rgba(236,72,153,${(0.16 + energy * 0.24).toFixed(2)})`;
-          const cvs = document.getElementById('wave-canvas');
-          if (cvs) cvs.style.transform = `scale(${pulse.toFixed(4)})`;
-        }
-        requestAnimationFrame(step);
-      };
-      requestAnimationFrame(step);
-    })();
-
-
     // =========================================================================
     // V2.2: ZERO-GAP NEXT TRACK PRELOADER & 2PX MINI-PLAYER PROGRESS LINE
     // =========================================================================
@@ -4352,6 +4352,43 @@
       }
       state.tracks = state.tracks.filter(t => !state.selectedIds.has(t.id));
       setMultiSelect(false); renderAll(); showToast(`Удалено треков: ${ids.length}`);
+    });
+
+
+    // =========================================================================
+    // V2.4: ALPHABET QUICK-JUMP BAR & ARTIST SHUFFLE
+    // =========================================================================
+    function renderAlphaJumpBar(list) {
+      const bar = document.getElementById('lib-alpha-bar'); if (!bar) return;
+      const show = (state.sortMode === 'title' || state.sortMode === 'artist') && list.length > 15;
+      bar.classList.toggle('hidden', !show);
+      if (!show) return;
+      const seen = new Map();
+      list.forEach(tr => {
+        const raw = (state.sortMode === 'artist' ? tr.artist : tr.title) || '';
+        const ch = (raw.trim()[0] || '#').toUpperCase();
+        const key = /[A-ZА-ЯЁ]/.test(ch) ? ch : '#';
+        if (!seen.has(key)) seen.set(key, tr.id);
+      });
+      bar.innerHTML = Array.from(seen.entries()).map(([ch, tid]) =>
+        `<button data-jump-tid="${tid}" class="alpha-chip">${ch}</button>`
+      ).join('');
+    }
+    document.getElementById('lib-alpha-bar').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-jump-tid]'); if (!btn) return;
+      const row = document.querySelector(`#library-track-list .track-row[data-track-id="${btn.dataset.jumpTid}"]`);
+      if (row) { haptic(6); row.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+    });
+
+    document.getElementById('btn-artist-shuffle').addEventListener('click', () => {
+      const nl = (state.activeArtistName || '').toLowerCase();
+      const tracks = state.tracks.filter(t => splitArtists(t.artist).some(a => a.toLowerCase() === nl) || t.artist.toLowerCase().includes(nl));
+      if (!tracks.length) return;
+      const sh = tracks.slice();
+      for (let i = sh.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [sh[i], sh[j]] = [sh[j], sh[i]]; }
+      haptic(12);
+      playTrack(sh[0].id, true, false, sh.map(t => t.id), `${state.activeArtistName} · Перемешано`);
+      openPlayerSheet(true);
     });
 
     // Boot
