@@ -258,6 +258,69 @@
     .toggle-pill::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 999px; background: #fff; transition: transform 0.2s cubic-bezier(0.22,1,0.36,1); }
     .toggle-pill.is-on { background: var(--accent-2); }
     .toggle-pill.is-on::after { transform: translateX(20px); }
+
+    /* v2.0: Remove native blue search cancel X */
+    input[type="search"]::-webkit-search-cancel-button,
+    input[type="search"]::-webkit-search-decoration { -webkit-appearance: none; appearance: none; display: none; }
+
+    /* v2.0: Smooth global theme & row transitions */
+    #ambient-bg, body { transition: background 480ms cubic-bezier(0.22, 1, 0.36, 1); }
+    .track-row {
+      transition: background-color 220ms ease, border-color 220ms ease, transform 170ms cubic-bezier(0.22, 1, 0.36, 1);
+      will-change: transform;
+    }
+    .track-row:active { transform: scale(0.982); }
+    .track-row.is-active-track { background: rgba(255,255,255,0.11); border-color: color-mix(in srgb, var(--accent-2) 50%, rgba(255,255,255,0.15)); }
+    .track-row.is-active-track .track-row-title { color: #f9a8d4; }
+    @keyframes heartPop { 0% { transform: scale(1); } 45% { transform: scale(1.32); } 100% { transform: scale(1); } }
+    .heart-pop { animation: heartPop 260ms cubic-bezier(0.22, 1, 0.36, 1); }
+
+    /* v2.0: Subtle GPU breathing animation on Player Mesh while playing */
+    @keyframes meshBreathe {
+      0%, 100% { transform: scale(1) translate3d(0, 0, 0); opacity: 0.94; }
+      50% { transform: scale(1.06) translate3d(0, -1.5%, 0); opacity: 1; }
+    }
+    #player-sheet.is-playing .player-mesh-layer { animation: meshBreathe 9s ease-in-out infinite; will-change: transform, opacity; }
+
+    /* v2.0: Lyrics Depth-of-Field focus */
+    .lyric-line { transition: color 280ms ease, transform 280ms cubic-bezier(0.22,1,0.36,1), filter 280ms ease, opacity 280ms ease; }
+    .lyric-line:not(.is-active) { filter: blur(0.45px); opacity: 0.62; }
+    .lyric-line.is-active { filter: none; opacity: 1; }
+
+    /* v2.0: True 3-Column Landscape Player & Adaptive Layout */
+    @media (orientation: landscape) and (max-height: 580px) {
+      #player-sheet .player-inner {
+        max-width: 100%;
+        padding: 10px max(18px, var(--safe-right, 16px)) 10px max(18px, var(--safe-left, 16px));
+        display: grid;
+        grid-template-columns: 56px 1fr 44%;
+        grid-template-rows: auto 1fr;
+        gap: 6px 20px;
+        align-items: center;
+      }
+      #player-top-header { grid-column: 2; grid-row: 1; }
+      #player-top-header .w-10.h-1 { display: none; }
+      #player-cover-stage, #player-lyrics-stage, #player-queue-stage {
+        grid-column: 3; grid-row: 1 / span 2;
+        height: 100%; max-height: calc(100dvh - 20px); padding: 4px 0;
+      }
+      #player-cover-stage .player-cover-frame {
+        width: min(74dvh, 38vw, 320px); height: min(74dvh, 38vw, 320px); border-radius: 22px;
+      }
+      #player-bottom-controls {
+        grid-column: 2; grid-row: 2;
+        display: flex; flex-direction: column; justify-content: center; gap: 10px;
+      }
+      #player-title-block { text-align: left; padding: 0; }
+      #player-action-dock {
+        position: fixed; left: max(10px, var(--safe-left, 8px)); top: 50%; transform: translateY(-50%);
+        flex-direction: column; gap: 12px; padding: 10px 6px;
+        border-right: 1px solid rgba(255,255,255,0.1);
+      }
+      #player-action-dock #btn-dual-like { flex-direction: column; height: auto; padding: 8px 6px; gap: 6px; }
+      #btn-play-main { width: 54px; height: 54px; }
+      #shared-playlists-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    }
   </style>
 </head>
 <body class="app-booting">
@@ -406,14 +469,18 @@
         <button data-sfilter="artists" class="sfilter-btn px-4 py-1.5 rounded-full text-xs font-bold glass-soft text-white/75">Исполнители</button>
         <button data-sfilter="playlists" class="sfilter-btn px-4 py-1.5 rounded-full text-xs font-bold glass-soft text-white/75">Плейлисты</button>
       </div>
-      <div id="search-empty-state" class="space-y-4">
-        <div id="recent-searches-block" class="hidden space-y-2.5">
+      <div id="search-empty-state" class="space-y-5">
+        <div class="space-y-2.5">
+          <div class="text-xs font-bold uppercase tracking-wider text-white/50">Исполнители в коллекции</div>
+          <div id="search-browse-artists" class="flex gap-3.5 overflow-x-auto no-scrollbar pb-1"></div>
+        </div>
+        <div id="recent-searches-block" class="space-y-2.5">
           <div class="flex items-center justify-between"><span class="text-xs font-bold uppercase tracking-wider text-white/50">Недавние запросы</span><button id="btn-clear-recent-searches" class="text-xs text-white/45 hover:text-white">Очистить</button></div>
           <div id="recent-searches-list" class="space-y-1.5"></div>
         </div>
         <div class="space-y-2.5">
-          <div class="text-xs font-bold uppercase tracking-wider text-white/50">Исполнители в коллекции</div>
-          <div id="search-browse-artists" class="flex gap-3.5 overflow-x-auto no-scrollbar pb-1"></div>
+          <div class="text-xs font-bold uppercase tracking-wider text-white/50">Недавно добавленные</div>
+          <div id="search-recent-tracks" class="space-y-2"></div>
         </div>
       </div>
       <div id="search-results-container" class="hidden space-y-5"></div>
@@ -597,6 +664,10 @@
           </button>
         </div>
       </div>
+      <div class="relative flex items-center">
+        <svg class="absolute left-3.5 text-white/40 pointer-events-none" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input id="pl-detail-search" type="search" placeholder="Поиск по плейлисту..." class="w-full rounded-full glass-soft pl-10 pr-4 py-2.5 text-xs text-white placeholder-white/40 outline-none focus:border-white/25" />
+      </div>
       <div id="pl-detail-tracks" class="space-y-2"></div>
     </section>
 
@@ -641,6 +712,18 @@
         <div class="glass-soft rounded-2xl p-3.5"><div class="text-[11px] text-white/50">Прослушиваний</div><div id="stat-plays" class="text-xl font-extrabold mt-0.5">0</div></div>
         <div class="glass-soft rounded-2xl p-3.5"><div class="text-[11px] text-white/50">Совместимость</div><div id="stat-compat" class="text-xl font-extrabold mt-0.5" style="color: var(--accent-1);">0%</div></div>
       </div>
+      <button id="btn-open-wrapped" class="w-full rounded-3xl p-4 text-left relative overflow-hidden border border-pink-400/30 active:scale-[0.985] transition" style="background: linear-gradient(135deg, rgba(168,85,247,0.34), rgba(236,72,153,0.28), rgba(15,10,30,0.92));">
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <div class="text-[10px] font-bold uppercase tracking-[0.2em] text-pink-200/90">ELYSION WRAPPED</div>
+            <div class="text-base font-extrabold mt-0.5">Итоги вашей пары</div>
+            <div class="text-xs text-white/65 mt-0.5">Сторис: минуты, Топ-5 артистов и карточка пары</div>
+          </div>
+          <div class="w-11 h-11 rounded-2xl bg-white/15 flex items-center justify-center flex-shrink-0">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          </div>
+        </div>
+      </button>
       <div id="couple-live-box" class="hidden glass-card rounded-3xl p-3.5 flex items-center gap-3 border border-pink-400/30">
         <img id="couple-live-cover" src="" alt="" class="w-12 h-12 rounded-xl object-cover flex-shrink-0" />
         <div class="min-w-0 flex-1">
@@ -817,7 +900,13 @@
       <div id="player-queue-stage" class="hidden flex-1 flex flex-col min-h-0 py-2">
         <div class="flex items-center justify-between gap-3 pb-2.5 border-b border-white/10">
           <div><div class="text-lg font-extrabold leading-tight">Далее</div><div id="queue-context-sub" class="text-xs text-white/55">Вся коллекция</div></div>
-          <button id="btn-close-queue" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-xs text-white/80">✕</button>
+          <div class="flex items-center gap-2">
+            <button id="btn-toggle-infinite" class="px-2.5 h-8 rounded-full bg-white/10 text-[11px] font-bold text-white/75 flex items-center gap-1.5 transition" title="Бесконечная волна">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18.178 8c5.096 0 5.096 8 0 8-5.095 0-7.133-8-12.739-8-4.585 0-4.585 8 0 8 5.606 0 7.644-8 12.74-8z"/></svg>
+              <span>Волна</span>
+            </button>
+            <button id="btn-close-queue" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-xs text-white/80">✕</button>
+          </div>
         </div>
         <div id="queue-list" class="flex-1 overflow-y-auto no-scrollbar space-y-1.5 pt-2.5 pb-4" style="touch-action: pan-y;"></div>
       </div>
@@ -851,7 +940,7 @@
           </div>
         </div>
 
-        <div class="flex items-center justify-between px-1">
+        <div id="player-action-dock" class="flex items-center justify-between px-1">
           <button id="btn-toggle-lyrics" class="w-10 h-10 rounded-2xl flex items-center justify-center text-sm font-extrabold text-white/75 active:scale-90 transition">Тт</button>
           <button id="btn-shuffle" class="w-10 h-10 rounded-2xl flex items-center justify-center text-white/65 active:scale-90 transition"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg></button>
           <button id="btn-dual-like" class="px-4 h-10 rounded-full glass-soft flex items-center gap-2.5 active:scale-95 transition">
@@ -889,7 +978,25 @@
         <input id="fx-speed-slider" type="range" min="0.70" max="1.35" step="0.01" value="1.00" class="w-full accent-pink-500" />
       </div>
       <div class="flex items-center justify-between"><div><div class="text-xs font-semibold">Изменять тон голоса (Pitch)</div><div class="text-[11px] text-white/45">Настоящий эффект Slowed / Nightcore</div></div><button id="toggle-pitch" class="toggle-pill is-on" role="switch"></button></div>
-      <div class="pt-2 border-t border-white/10"><div class="text-xs font-bold mb-2">Эквалайзер</div><div id="fx-eq-grid" class="grid grid-cols-2 gap-2"></div></div>
+      <div class="pt-2 border-t border-white/10 space-y-2.5">
+        <div class="flex items-center justify-between"><div class="text-xs font-bold">Эквалайзер 2.0</div><span id="fx-eq-active-lbl" class="text-[11px] text-pink-300 font-semibold">Плоский</span></div>
+        <div class="rounded-2xl bg-black/35 border border-white/10 p-2.5">
+          <svg id="fx-eq-curve-svg" viewBox="0 0 240 56" class="w-full h-14 overflow-visible">
+            <line x1="0" y1="28" x2="240" y2="28" stroke="rgba(255,255,255,0.12)" stroke-dasharray="3 3" />
+            <path id="fx-eq-curve-path" d="M 10 28 Q 120 28 230 28" fill="none" stroke="url(#eqGrad)" stroke-width="2.6" stroke-linecap="round" />
+            <defs><linearGradient id="eqGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#A855F7"/><stop offset="100%" stop-color="#EC4899"/></linearGradient></defs>
+          </svg>
+        </div>
+        <div>
+          <div class="flex justify-between text-[11px] text-white/65 mb-1"><span>Bass Boost (усиление баса)</span><span id="fx-bass-val" class="font-bold text-white">+0 дБ</span></div>
+          <input id="fx-bass-slider" type="range" min="0" max="10" step="1" value="0" class="w-full accent-pink-500" />
+        </div>
+        <div id="fx-eq-grid" class="grid grid-cols-2 gap-2"></div>
+      </div>
+      <div class="pt-2 border-t border-white/10">
+        <div class="flex justify-between text-xs text-white/75 mb-1.5"><span class="font-bold">Crossfade (плавный переход)</span><span id="fx-crossfade-val" class="font-bold text-pink-300">Выкл</span></div>
+        <input id="fx-crossfade-slider" type="range" min="0" max="8" step="1" value="0" class="w-full accent-pink-500" />
+      </div>
       <div class="pt-2 border-t border-white/10">
         <div class="flex items-center justify-between mb-2"><div class="text-xs font-bold">Таймер сна</div><span id="fx-sleep-status" class="text-[11px] text-pink-300 font-semibold">Выкл</span></div>
         <div class="grid grid-cols-5 gap-1.5">
@@ -946,6 +1053,8 @@
         <button data-close-sheet="track-menu-modal" class="w-8 h-8 rounded-full bg-white/10 text-xs">✕</button>
       </div>
       <div class="space-y-1.5">
+        <button id="tm-play-next" class="w-full py-3 px-4 rounded-2xl bg-white/5 hover:bg-white/10 text-left text-xs font-bold flex items-center gap-3"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg><span>Играть следующим</span></button>
+        <button id="tm-add-queue" class="w-full py-3 px-4 rounded-2xl bg-white/5 hover:bg-white/10 text-left text-xs font-bold flex items-center gap-3"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="16" y2="18"/><line x1="19" y1="15" x2="19" y2="21"/><line x1="16" y1="18" x2="22" y2="18"/></svg><span>В конец очереди</span></button>
         <button id="tm-edit-moment" class="w-full py-3 px-4 rounded-2xl bg-white/5 hover:bg-white/10 text-left text-xs font-bold flex items-center gap-3"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Оставить заметку (Наш момент)</span></button>
         <button id="tm-pin-profile" class="w-full py-3 px-4 rounded-2xl bg-white/5 hover:bg-white/10 text-left text-xs font-bold flex items-center gap-3"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg><span>Закрепить в моём профиле</span></button>
         <button id="tm-go-artist" class="w-full py-3 px-4 rounded-2xl bg-white/5 hover:bg-white/10 text-left text-xs font-bold flex items-center gap-3"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Перейти к исполнителю</span></button>
@@ -955,6 +1064,25 @@
         <button id="tm-delete" class="w-full py-3 px-4 rounded-2xl bg-rose-500/15 text-rose-300 border border-rose-400/20 text-left text-xs font-bold flex items-center gap-3"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg><span>Удалить трек из коллекции</span></button>
       </div>
       <div id="tm-playlist-picker" class="hidden pt-2 border-t border-white/10 space-y-1.5 max-h-44 overflow-y-auto no-scrollbar"></div>
+    </div>
+  </div>
+
+  <!-- MODAL: ELYSION WRAPPED STORIES -->
+  <div id="wrapped-modal" class="hidden fixed inset-0 bg-[#07040F] flex flex-col p-4" style="z-index: 90; padding-top: calc(14px + var(--safe-top)); padding-bottom: calc(18px + var(--safe-bottom));">
+    <div class="w-full max-w-md mx-auto flex flex-col h-full">
+      <div id="wrapped-progress-bars" class="flex gap-1.5 mb-3"></div>
+      <div class="flex items-center justify-between mb-3">
+        <div class="text-xs font-bold uppercase tracking-[0.2em] text-white/70" style="font-family:'Cinzel',serif;">ELYSION WRAPPED</div>
+        <button id="btn-close-wrapped" class="w-8 h-8 rounded-full bg-white/10 text-xs flex items-center justify-center">✕</button>
+      </div>
+      <div id="wrapped-stage" class="flex-1 rounded-3xl overflow-hidden relative flex flex-col justify-between p-6 border border-white/15 select-none" style="background: radial-gradient(circle at 20% 20%, rgba(168,85,247,0.45), transparent 60%), radial-gradient(circle at 80% 80%, rgba(236,72,153,0.4), transparent 60%), #100820;">
+        <div id="wrapped-slide-content" class="flex-1 flex flex-col justify-center"></div>
+        <div class="flex items-center justify-between pt-4 gap-2 relative z-20">
+          <button id="btn-wrapped-prev" class="px-4 py-2.5 rounded-full bg-white/10 text-xs font-bold active:scale-95 transition">Назад</button>
+          <button id="btn-wrapped-save" class="hidden px-4 py-2.5 rounded-full accent-grad text-xs font-extrabold shadow-lg active:scale-95 transition">Сохранить в Галерею</button>
+          <button id="btn-wrapped-next" class="px-4 py-2.5 rounded-full bg-white text-slate-950 text-xs font-extrabold active:scale-95 transition">Далее</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1144,7 +1272,7 @@
       activeArtistName: '',
       searchQuery: '',
       searchFilter: 'all',
-      sortMode: localStorage.getItem('elysion_sort_mode') || 'default', lyricOffsets: JSON.parse(localStorage.getItem('elysion_lyric_offsets') || '{}'),
+      sortMode: localStorage.getItem('elysion_sort_mode') || 'default', lyricOffsets: JSON.parse(localStorage.getItem('elysion_lyric_offsets') || '{}'), infiniteWave: localStorage.getItem('elysion_infinite_wave') !== '0', crossfadeSec: Number(localStorage.getItem('elysion_crossfade') || 0), bassBoost: Number(localStorage.getItem('elysion_bass_boost') || 0), playlistSearch: '',
       playerOpen: false,
       playerMode: 'cover', // 'cover' | 'lyrics' | 'queue'
       playContextLabel: 'Вся коллекция',
@@ -1421,19 +1549,21 @@
       if (!getCurrentTrack()) return;
       state.playerOpen = true; document.body.classList.add('player-open');
       playerAnimating = true;
+      applyThemeAndBackground();
       renderPlayerView();
       setPlayerMode(getPrefs().autoLyrics ? 'lyrics' : 'cover');
       const sheet = document.getElementById('player-sheet');
       sheet.style.transform = '';
+      sheet.classList.toggle('is-playing', !!state.isPlaying);
       if (record) pushNavState('player');
       setNativeImmersiveStatusBar(true);
       requestAnimationFrame(() => {
         sheet.classList.add('is-open');
         setTimeout(() => {
           playerAnimating = false;
-          applyThemeAndBackground(); syncWakeLock();
+          syncWakeLock();
           if (state.isPlaying) startWaveLoop();
-        }, 350);
+        }, 340);
       });
     }
 
@@ -1444,14 +1574,23 @@
       const sheet = document.getElementById('player-sheet');
       sheet.style.transform = '';
       sheet.classList.remove('is-open');
+      applyThemeAndBackground();
       setNativeImmersiveStatusBar(false);
-      setTimeout(() => { playerAnimating = false; applyThemeAndBackground(); syncWakeLock(); }, 350);
+      setTimeout(() => { playerAnimating = false; syncWakeLock(); }, 340);
     }
 
     function openSpringSheet(id) { document.getElementById(id)?.classList.add('is-open'); }
     function closeSpringSheet(id) { document.getElementById(id)?.classList.remove('is-open'); }
 
     function navigateTo(view, record = true) {
+      if (view === state.activeView && !state.playerOpen) {
+        const curPane = document.getElementById(`view-${view}`);
+        if (curPane && curPane.scrollTop > 4) {
+          curPane.scrollTo({ top: 0, behavior: 'smooth' });
+          haptic(6);
+        }
+        return;
+      }
       const oldMain = TAB_ORDER.includes(state.activeView) ? state.activeView : state.prevMainTab;
       const dirClass = (TAB_ORDER.indexOf(view) >= 0 && TAB_ORDER.indexOf(oldMain) >= 0 && TAB_ORDER.indexOf(view) < TAB_ORDER.indexOf(oldMain)) ? 'view-enter-left' : 'view-enter-right';
       if (TAB_ORDER.includes(view)) state.prevMainTab = view;
@@ -1492,7 +1631,7 @@
         const s = document.getElementById(sid);
         if (s && s.classList.contains('is-open')) { closeSpringSheet(sid); return true; }
       }
-      for (const id of ['crop-modal', 'quote-modal', 'pl-add-tracks-modal', 'playlist-edit-modal', 'cover-modal', 'upload-modal', 'playlist-modal']) {
+      for (const id of ['wrapped-modal', 'crop-modal', 'quote-modal', 'pl-add-tracks-modal', 'playlist-edit-modal', 'cover-modal', 'upload-modal', 'playlist-modal']) {
         const el = document.getElementById(id);
         if (el && !el.classList.contains('hidden')) { el.classList.add('hidden'); return true; }
       }
@@ -1649,7 +1788,9 @@
       return lines.sort((a, b) => a.time - b.time);
     }
     function getTrackLyricOffset(trackId) {
-      return Number(state.lyricOffsets?.[trackId] || 0);
+      if (state.lyricOffsets && trackId in state.lyricOffsets) return Number(state.lyricOffsets[trackId] || 0);
+      const tr = state.tracks.find(t => t.id === trackId);
+      return Number(tr?.lyricOffset || 0);
     }
     function updateLyricsOffsetPill() {
       const tr = getCurrentTrack();
@@ -1718,6 +1859,18 @@
       if (plId === 'matches') return state.tracks.filter(t => t.likedHe && t.likedShe);
       if (plId === 'my-likes') return state.tracks.filter(t => getUser() === 'he' ? t.likedHe : t.likedShe);
       if (plId === 'all') return state.tracks.slice();
+      if (plId === 'smart-repeat') {
+        const recent = getMyStats().recentIds || [];
+        return recent.map(id => state.tracks.find(t => t.id === id)).filter(Boolean);
+      }
+      if (plId === 'smart-forgotten') {
+        const recSet = new Set(getMyStats().recentIds || []);
+        return state.tracks.filter(t => !recSet.has(t.id)).slice(0, 40);
+      }
+      if (plId === 'smart-partner') {
+        const p = getPartner();
+        return state.tracks.filter(t => p === 'he' ? (t.likedHe && !t.likedShe) : (t.likedShe && !t.likedHe));
+      }
       return (state.playlistMap[plId] || []).map(id => state.tracks.find(t => t.id === id)).filter(Boolean);
     }
     function getActiveList() {
@@ -1798,21 +1951,34 @@
         if (state.playerOpen) startWaveLoop();
         updateMediaSession(tr); broadcastPresence();
         if (!fromJam) broadcastJam({ action: 'sync', trackId: tr.id, position: audioEl.currentTime, isPlaying: true, speed: state.speed });
-        renderAll();
-      }).catch(() => { state.isPlaying = false; renderAll(); });
+        syncPlaybackUI();
+      }).catch(() => { state.isPlaying = false; syncPlaybackUI(); });
     }
 
     function pauseTrack(fromJam = false) {
       audioEl.pause(); state.isPlaying = false; stopWaveLoop();
       updateMediaSession(getCurrentTrack()); broadcastPresence();
       if (!fromJam) broadcastJam({ action: 'sync', trackId: state.currentTrackId, position: audioEl.currentTime, isPlaying: false, speed: state.speed });
-      renderAll();
+      syncPlaybackUI();
     }
     function togglePlay() { if (state.isPlaying) pauseTrack(); else playTrack(state.currentTrackId, false); }
     function nextTrack() {
       const list = getActiveList(); if (!list.length) return;
       if (state.shuffle && list.length > 1) { playTrack(list[Math.floor(Math.random() * list.length)].id, true); return; }
       const idx = list.findIndex(t => t.id === state.currentTrackId);
+      if (idx >= list.length - 1 && state.infiniteWave && state.tracks.length > list.length) {
+        const cur = getCurrentTrack();
+        const curArtists = new Set(splitArtists(cur?.artist || '').map(a => a.toLowerCase()));
+        const inQueue = new Set(list.map(t => t.id));
+        const pool = state.tracks.filter(t => !inQueue.has(t.id));
+        const sim = pool.filter(t => splitArtists(t.artist).some(a => curArtists.has(a.toLowerCase())));
+        const pick = (sim.length ? sim : pool)[Math.floor(Math.random() * (sim.length ? sim.length : pool.length))];
+        if (pick) {
+          state.playbackQueueIds = [...list.map(t => t.id), pick.id];
+          playTrack(pick.id, true);
+          return;
+        }
+      }
       playTrack(list[(idx + 1) % list.length].id, true);
     }
     function prevTrack() {
@@ -2009,7 +2175,7 @@
       return {
         id: row.id, title: row.title || 'Без названия', artist: row.artist || 'Unknown', duration: Number(row.duration || 180),
         cover, audioUrl, addedBy: row.added_by === 'she' ? 'she' : 'he',
-        likedHe: Boolean(row.like_he ?? row.liked_he), likedShe: Boolean(row.like_she ?? row.liked_she), noteText: row.note_text || '', noteAuthor: row.note_author || '', createdAt: row.created_at || ''
+        likedHe: Boolean(row.like_he ?? row.liked_he), likedShe: Boolean(row.like_she ?? row.liked_she), noteText: row.note_text || '', noteAuthor: row.note_author || '', createdAt: row.created_at || '', lyricOffset: Number(row.lyric_offset || 0)
       };
     }
 
@@ -2140,14 +2306,20 @@
     }
     function checkBadges() { getBadges().forEach(b => { if (b.unlocked && !state.stats.unlockedBadges[b.id]) { state.stats.unlockedBadges[b.id] = true; savePersistent(); } }); }
 
+    function heartSvgHtml(liked) {
+      return liked
+        ? `<svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.6" class="text-pink-400 drop-shadow-[0_0_8px_rgba(236,72,153,0.45)]"><path d="M12 20.6l-1.35-1.24C5.4 14.68 2 11.6 2 7.85 2 4.82 4.38 2.5 7.4 2.5c1.72 0 3.37.82 4.6 2.12C13.23 3.32 14.88 2.5 16.6 2.5 19.62 2.5 22 4.82 22 7.85c0 3.75-3.4 6.83-8.65 11.51L12 20.6z"/></svg>`
+        : `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="text-white/35"><path d="M12 20.6l-1.35-1.24C5.4 14.68 2 11.6 2 7.85 2 4.82 4.38 2.5 7.4 2.5c1.72 0 3.37.82 4.6 2.12C13.23 3.32 14.88 2.5 16.6 2.5 19.62 2.5 22 4.82 22 7.85c0 3.75-3.4 6.83-8.65 11.51L12 20.6z"/></svg>`;
+    }
+
     function buildTrackRowHtml(tr, queueContext = '') {
       const active = tr.id === state.currentTrackId, myLiked = getUser() === 'he' ? tr.likedHe : tr.likedShe;
       return `
-        <div data-track-id="${tr.id}" data-queue-ctx="${queueContext}" class="track-row glass-soft rounded-2xl p-2.5 flex items-center gap-3 cursor-pointer ${active ? 'border-pink-400/50 bg-white/10' : ''} active:scale-[0.99] transition">
+        <div data-track-id="${tr.id}" data-queue-ctx="${queueContext}" class="track-row glass-soft rounded-2xl p-2.5 flex items-center gap-3 cursor-pointer ${active ? 'is-active-track' : ''}">
           <img src="${tr.cover}" alt="" class="w-12 h-12 rounded-xl object-cover flex-shrink-0 bg-white/10" loading="lazy" />
-          <div class="flex-1 min-w-0"><div class="text-sm font-bold truncate ${active ? 'text-pink-300' : ''}">${escapeHtml(tr.title)}</div><div class="text-xs text-white/55 truncate flex items-center gap-1.5"><span>${escapeHtml(tr.artist)}</span></div></div>
-          <button data-like-id="${tr.id}" class="w-8 h-8 rounded-full flex items-center justify-center ${myLiked ? 'text-pink-400' : 'text-white/25'}">♥</button>
-          <button data-menu-id="${tr.id}" class="w-8 h-8 rounded-full flex items-center justify-center text-white/45 hover:text-white">⋮</button>
+          <div class="flex-1 min-w-0"><div class="track-row-title text-sm font-bold truncate">${escapeHtml(tr.title)}</div><div class="text-xs text-white/55 truncate flex items-center gap-1.5"><span>${escapeHtml(tr.artist)}</span></div></div>
+          <button data-like-id="${tr.id}" class="w-8 h-8 rounded-full flex items-center justify-center active:scale-90 transition">${heartSvgHtml(myLiked)}</button>
+          <button data-menu-id="${tr.id}" class="w-8 h-8 rounded-full flex items-center justify-center text-white/45 hover:text-white active:scale-90 transition"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="19" r="1.7"/></svg></button>
         </div>
       `;
     }
@@ -2190,6 +2362,9 @@
       const cards = [
         ...state.playlists.map((p, i) => { const pTrs = getPlaylistTracks(p.id); return { id: p.id, name: p.name, sub: `${pTrs.length} треков`, cover: p.cover_url || pTrs[0]?.cover || FALLBACK_COVERS[i % 3] }; }),
         { id: 'matches', name: 'Наши совпадения', sub: `${m.matches} треков`, cover: FALLBACK_COVERS[0] },
+        { id: 'smart-repeat', name: 'На репите', sub: `${(getMyStats().recentIds || []).length} треков`, cover: FALLBACK_COVERS[2] },
+        { id: 'smart-partner', name: `Вкус ${PROFILE_NAMES[getPartner()]}`, sub: `${getPlaylistTracks('smart-partner').length} открытий`, cover: FALLBACK_COVERS[0] },
+        { id: 'smart-forgotten', name: 'Давно не слушали', sub: `${getPlaylistTracks('smart-forgotten').length} треков`, cover: FALLBACK_COVERS[1] },
         { id: 'all', name: 'Вся коллекция', sub: `${state.tracks.length} треков`, cover: FALLBACK_COVERS[1] }
       ];
       document.getElementById('shared-playlists-grid').innerHTML = cards.map(c => `
@@ -2210,14 +2385,17 @@
     function renderPlaylistDetailView() {
       const id = state.activePlaylistDetailId; if (!id) return;
       const custom = state.playlists.find(p => p.id === id), tracks = getPlaylistTracks(id);
-      const name = custom ? custom.name : (id === 'matches' ? 'Наши совпадения' : id === 'my-likes' ? 'Мне нравится' : 'Вся коллекция');
+      const SMART_NAMES = { matches: 'Наши совпадения', 'my-likes': 'Мне нравится', 'smart-repeat': 'На репите', 'smart-forgotten': 'Давно не слушали', 'smart-partner': `Вкус ${PROFILE_NAMES[getPartner()]}`, all: 'Вся коллекция' };
+      const name = custom ? custom.name : (SMART_NAMES[id] || 'Вся коллекция');
       document.getElementById('pl-detail-cover').src = custom?.cover_url || tracks[0]?.cover || FALLBACK_COVERS[0];
       document.getElementById('pl-detail-name').textContent = name;
       document.getElementById('pl-detail-desc').textContent = custom?.description || (id === 'matches' ? 'Треки, которые лайкнули и Рома, и Маша' : '');
       document.getElementById('pl-detail-meta').textContent = `${tracks.length} треков` + (custom ? ` · ${PROFILE_NAMES[custom.created_by] || 'Рома'}` : '');
       document.getElementById('btn-pl-edit').classList.toggle('hidden', !custom);
       document.getElementById('btn-pl-delete').classList.toggle('hidden', !custom);
-      document.getElementById('pl-detail-tracks').innerHTML = sortTrackList(tracks).map(tr => buildTrackRowHtml(tr, id)).join('') || '<div class="py-10 text-center text-xs text-white/45">В этом плейлисте пока нет треков</div>';
+      const qPl = (state.playlistSearch || '').trim().toLowerCase();
+      const filteredPl = qPl ? tracks.filter(t => (t.title + ' ' + t.artist).toLowerCase().includes(qPl)) : tracks;
+      document.getElementById('pl-detail-tracks').innerHTML = sortTrackList(filteredPl).map(tr => buildTrackRowHtml(tr, id)).join('') || '<div class="py-10 text-center text-xs text-white/45">В этом плейлисте пока нет треков</div>';
     }
 
     function renderSearchView() {
@@ -2231,10 +2409,15 @@
         b.classList.toggle('accent-grad', on); b.classList.toggle('text-white', on); b.classList.toggle('glass-soft', !on); b.classList.toggle('text-white/75', !on);
       });
       if (!q) {
-        document.getElementById('recent-searches-block').classList.toggle('hidden', !state.recentSearches.length);
-        document.getElementById('recent-searches-list').innerHTML = state.recentSearches.map(term => `
-          <button data-recent-q="${escapeHtml(term)}" class="w-full py-2.5 px-3.5 rounded-2xl glass-soft flex items-center gap-3 text-left text-sm font-semibold text-white/85"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white/45 flex-shrink-0"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span class="truncate">${escapeHtml(term)}</span></button>
-        `).join('');
+        document.getElementById('btn-clear-recent-searches').classList.toggle('hidden', !state.recentSearches.length);
+        document.getElementById('recent-searches-list').innerHTML = state.recentSearches.length
+          ? state.recentSearches.map(term => `
+              <button data-recent-q="${escapeHtml(term)}" class="w-full py-2.5 px-3.5 rounded-2xl glass-soft flex items-center gap-3 text-left text-sm font-semibold text-white/85 active:scale-[0.99] transition"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white/45 flex-shrink-0"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span class="truncate">${escapeHtml(term)}</span></button>
+            `).join('')
+          : '<div class="text-xs text-white/40 py-2">Здесь появятся твои недавние поисковые запросы</div>';
+        const recentAdded = state.tracks.slice(0, 6);
+        const recBox = document.getElementById('search-recent-tracks');
+        if (recBox) recBox.innerHTML = recentAdded.map(tr => buildTrackRowHtml(tr, 'all')).join('');
         document.getElementById('search-browse-artists').innerHTML = getAllArtistsSummary().slice(0, 12).map(a => `
           <button data-open-artist="${escapeHtml(a.name)}" class="flex flex-col items-center w-20 flex-shrink-0 active:scale-95 transition"><img src="${a.photo}" alt="" class="rounded-full object-cover border border-white/15 shadow" style="width:72px;height:72px;" /><div class="text-xs font-bold truncate w-full text-center mt-2">${escapeHtml(a.name)}</div><div class="text-[10px] text-white/45">${a.count} тр.</div></button>
         `).join('');
@@ -3192,7 +3375,7 @@
     function openSortSheet() {
       document.getElementById('sort-options-list').innerHTML = SORT_OPTIONS.map(o => {
         const active = state.sortMode === o.id;
-        return `<button data-pick-sort="${o.id}" class="w-full py-3 px-4 rounded-2xl ${active ? 'bg-white/12 text-white' : 'bg-white/5 text-white/80'} hover:bg-white/12 text-left text-sm font-bold flex items-center justify-between transition">
+        return `<button data-pick-sort="${o.id}" class="w-full py-3 px-4 rounded-2xl border ${active ? 'bg-white/15 border-pink-400/55 text-white shadow-[0_0_16px_rgba(236,72,153,0.18)]' : 'bg-white/5 border-white/5 text-white/80'} hover:bg-white/10 text-left text-sm font-bold flex items-center justify-between transition">
           <span>${o.label}</span>
           ${active ? '<span class="w-5 h-5 rounded-full accent-grad flex items-center justify-center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span>' : ''}
         </button>`;
@@ -3215,8 +3398,10 @@
     function nudgeLyricOffset(delta) {
       const tr = getCurrentTrack(); if (!tr) return;
       const next = delta === 0 ? 0 : Math.round((getTrackLyricOffset(tr.id) + delta) * 10) / 10;
-      state.lyricOffsets[tr.id] = Math.max(-15, Math.min(15, next));
+      const clamped = Math.max(-15, Math.min(15, next));
+      state.lyricOffsets[tr.id] = clamped; tr.lyricOffset = clamped;
       try { localStorage.setItem('elysion_lyric_offsets', JSON.stringify(state.lyricOffsets)); } catch {}
+      if (sb) { sb.from('tracks').update({ lyric_offset: clamped }).eq('id', tr.id).then(() => {}).catch(() => {}); }
       haptic(8); updateLyricsOffsetPill();
       syncActiveLyricLine(audioEl.currentTime || 0, true);
     }
@@ -3254,6 +3439,346 @@
       }
       renderAll();
       showToast(tr.noteText ? 'Момент сохранён!' : 'Заметка удалена');
+    });
+
+
+    // =========================================================================
+    // V2.0: SILKY TARGETED PLAYBACK UI SYNC (Zero full-list innerHTML flicker!)
+    // =========================================================================
+    function syncPlaybackUI() {
+      const tr = getCurrentTrack();
+      document.querySelectorAll('.track-row').forEach(row => {
+        row.classList.toggle('is-active-track', !!tr && row.dataset.trackId === tr.id);
+      });
+      const sheet = document.getElementById('player-sheet');
+      if (sheet) sheet.classList.toggle('is-playing', !!state.isPlaying);
+      renderMiniPlayer();
+      if (state.playerOpen) renderPlayerView();
+    }
+
+    // Targeted heart update on like (with spring pop animation!)
+    const origToggleLike = toggleLike;
+    toggleLike = async function(trackId) {
+      const tr = state.tracks.find(t => t.id === trackId); if (!tr) return;
+      haptic(12);
+      const u = getUser(); if (u === 'he') tr.likedHe = !tr.likedHe; else tr.likedShe = !tr.likedShe;
+      const liked = u === 'he' ? tr.likedHe : tr.likedShe;
+      document.querySelectorAll(`[data-like-id="${tr.id}"]`).forEach(btn => {
+        btn.innerHTML = heartSvgHtml(liked);
+        btn.classList.remove('heart-pop'); void btn.offsetWidth; btn.classList.add('heart-pop');
+      });
+      renderMiniPlayer();
+      if (state.playerOpen) renderPlayerView();
+      if (sb) await sb.from('tracks').update(u === 'he' ? { like_he: tr.likedHe } : { like_she: tr.likedShe }).eq('id', tr.id);
+      checkBadges();
+    };
+
+    // =========================================================================
+    // V2.0: IN-PLAYLIST SEARCH + MINI-PLAYER SWIPE + TRACK ROW SWIPE
+    // =========================================================================
+    document.getElementById('pl-detail-search').addEventListener('input', (e) => {
+      state.playlistSearch = e.target.value || '';
+      renderPlaylistDetailView();
+    });
+
+    // Mini-player horizontal swipe -> Next / Prev track!
+    (function wireMiniPlayerSwipe() {
+      const mp = document.getElementById('mini-player-wrap');
+      if (!mp) return;
+      let sx = 0, sy = 0, active = false;
+      mp.addEventListener('touchstart', (e) => {
+        if (e.touches.length !== 1) return;
+        sx = e.touches[0].clientX; sy = e.touches[0].clientY; active = true;
+      }, { passive: true });
+      mp.addEventListener('touchend', (e) => {
+        if (!active) return; active = false;
+        const dx = (e.changedTouches[0]?.clientX || sx) - sx;
+        const dy = Math.abs((e.changedTouches[0]?.clientY || sy) - sy);
+        if (Math.abs(dx) > 54 && dy < 40) {
+          haptic(12);
+          if (dx < 0) nextTrack(); else prevTrack();
+        }
+      }, { passive: true });
+    })();
+
+    // Track row quick swipe: Right -> Play Next, Left -> Toggle Like
+    (function wireTrackRowSwipe() {
+      let sx = 0, sy = 0, rowEl = null;
+      document.addEventListener('touchstart', (e) => {
+        const r = e.target.closest('.track-row');
+        if (!r || e.touches.length !== 1) { rowEl = null; return; }
+        sx = e.touches[0].clientX; sy = e.touches[0].clientY; rowEl = r;
+      }, { passive: true });
+      document.addEventListener('touchend', (e) => {
+        if (!rowEl) return;
+        const targetRow = rowEl; rowEl = null;
+        const dx = (e.changedTouches[0]?.clientX || sx) - sx;
+        const dy = Math.abs((e.changedTouches[0]?.clientY || sy) - sy);
+        if (Math.abs(dx) > 78 && dy < 36) {
+          const tid = targetRow.dataset.trackId;
+          if (!tid) return;
+          if (dx > 0) queuePlayNext(tid);
+          else toggleLike(tid);
+        }
+      }, { passive: true });
+    })();
+
+    // =========================================================================
+    // V2.0: SMART QUEUE 2.0 (Play Next, Add to End, Reorder, Remove, Infinite Wave)
+    // =========================================================================
+    function ensureQueueArray() {
+      if (!state.playbackQueueIds || !state.playbackQueueIds.length) {
+        state.playbackQueueIds = state.tracks.map(t => t.id);
+      }
+    }
+    function queuePlayNext(trackId) {
+      const tr = state.tracks.find(t => t.id === trackId); if (!tr) return;
+      ensureQueueArray();
+      const curIdx = Math.max(0, state.playbackQueueIds.indexOf(state.currentTrackId));
+      state.playbackQueueIds = state.playbackQueueIds.filter(id => id !== trackId);
+      state.playbackQueueIds.splice(curIdx + 1, 0, trackId);
+      haptic(12); showToast(`Следующим: «${tr.title}»`);
+      if (state.playerOpen && state.playerMode === 'queue') renderQueueStageV2();
+    }
+    function queueAddEnd(trackId) {
+      const tr = state.tracks.find(t => t.id === trackId); if (!tr) return;
+      ensureQueueArray();
+      state.playbackQueueIds = state.playbackQueueIds.filter(id => id !== trackId);
+      state.playbackQueueIds.push(trackId);
+      haptic(10); showToast(`Добавлено в конец очереди: «${tr.title}»`);
+      if (state.playerOpen && state.playerMode === 'queue') renderQueueStageV2();
+    }
+    document.getElementById('tm-play-next').addEventListener('click', () => {
+      const id = state.contextTrackId; closeSpringSheet('track-menu-modal');
+      if (id) queuePlayNext(id);
+    });
+    document.getElementById('tm-add-queue').addEventListener('click', () => {
+      const id = state.contextTrackId; closeSpringSheet('track-menu-modal');
+      if (id) queueAddEnd(id);
+    });
+
+    function syncInfiniteBtn() {
+      const btn = document.getElementById('btn-toggle-infinite');
+      if (!btn) return;
+      btn.classList.toggle('accent-grad', !!state.infiniteWave);
+      btn.classList.toggle('text-white', !!state.infiniteWave);
+      btn.classList.toggle('bg-white/10', !state.infiniteWave);
+      btn.classList.toggle('text-white/70', !state.infiniteWave);
+    }
+    document.getElementById('btn-toggle-infinite').addEventListener('click', () => {
+      state.infiniteWave = !state.infiniteWave;
+      try { localStorage.setItem('elysion_infinite_wave', state.infiniteWave ? '1' : '0'); } catch {}
+      haptic(10); syncInfiniteBtn();
+      showToast(state.infiniteWave ? 'Бесконечная волна включена' : 'Бесконечная волна выключена');
+    });
+    syncInfiniteBtn();
+
+    function renderQueueStageV2() {
+      const list = getActiveList();
+      const box = document.getElementById('queue-list'); if (!box) return;
+      document.getElementById('queue-context-sub').textContent = `${state.playContextLabel || 'Вся коллекция'} · ${list.length} треков`;
+      box.innerHTML = list.map((tr, i) => `
+        <div data-track-id="${tr.id}" class="track-row p-2 rounded-2xl flex items-center gap-2.5 cursor-pointer ${tr.id === state.currentTrackId ? 'is-active-track border border-pink-400/40' : 'bg-white/5'}">
+          <img src="${tr.cover}" alt="" class="w-10 h-10 rounded-xl object-cover flex-shrink-0" />
+          <div class="min-w-0 flex-1"><div class="track-row-title text-xs font-bold truncate">${escapeHtml(tr.title)}</div><div class="text-[11px] text-white/55 truncate">${escapeHtml(tr.artist)}</div></div>
+          <div class="flex items-center gap-1 flex-shrink-0">
+            <button data-q-up="${i}" class="w-7 h-7 rounded-lg bg-white/8 text-white/70 flex items-center justify-center active:scale-90 transition" title="Выше"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="18 15 12 9 6 15"/></svg></button>
+            <button data-q-down="${i}" class="w-7 h-7 rounded-lg bg-white/8 text-white/70 flex items-center justify-center active:scale-90 transition" title="Ниже"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="6 9 12 15 18 9"/></svg></button>
+            <button data-q-del="${tr.id}" class="w-7 h-7 rounded-lg bg-white/8 text-white/55 hover:text-rose-300 flex items-center justify-center active:scale-90 transition" title="Убрать">✕</button>
+          </div>
+        </div>
+      `).join('');
+    }
+    document.getElementById('queue-list').addEventListener('click', (e) => {
+      const up = e.target.closest('[data-q-up]'), dn = e.target.closest('[data-q-down]'), rm = e.target.closest('[data-q-del]');
+      if (!up && !dn && !rm) return;
+      e.stopPropagation();
+      ensureQueueArray();
+      if (up) {
+        const i = Number(up.dataset.qUp);
+        if (i > 0) { const a = state.playbackQueueIds; [a[i - 1], a[i]] = [a[i], a[i - 1]]; haptic(8); renderQueueStageV2(); }
+      } else if (dn) {
+        const i = Number(dn.dataset.qDown);
+        if (i < state.playbackQueueIds.length - 1) { const a = state.playbackQueueIds; [a[i + 1], a[i]] = [a[i], a[i + 1]]; haptic(8); renderQueueStageV2(); }
+      } else if (rm) {
+        state.playbackQueueIds = state.playbackQueueIds.filter(id => id !== rm.dataset.qDel);
+        haptic(8); renderQueueStageV2();
+      }
+    });
+    document.getElementById('btn-open-queue').addEventListener('click', () => setTimeout(renderQueueStageV2, 20));
+
+    // =========================================================================
+    // V2.0: EQUALIZER 2.0 (SVG CURVE + BASS BOOST) + CROSSFADE + SLEEP FADE
+    // =========================================================================
+    function updateEqCurveSvg() {
+      const path = document.getElementById('fx-eq-curve-path'); if (!path) return;
+      const preset = EQ_PRESETS.find(p => p.id === (getPrefs().eq || 'flat')) || EQ_PRESETS[0];
+      const low = Math.min(14, (preset.low || 0) + (state.bassBoost || 0));
+      const mid = preset.mid || 0, high = preset.high || 0;
+      const yL = 28 - low * 1.7, yM = 28 - mid * 1.7, yH = 28 - high * 1.7;
+      path.setAttribute('d', `M 8 ${yL.toFixed(1)} C 65 ${yL.toFixed(1)}, 80 ${yM.toFixed(1)}, 120 ${yM.toFixed(1)} C 160 ${yM.toFixed(1)}, 175 ${yH.toFixed(1)}, 232 ${yH.toFixed(1)}`);
+      const lbl = document.getElementById('fx-eq-active-lbl');
+      if (lbl) lbl.textContent = preset.name + (state.bassBoost > 0 ? ` + Bass +${state.bassBoost}` : '');
+      if (eqLow) { try { eqLow.gain.value = low; } catch {} }
+    }
+    const bassSlider = document.getElementById('fx-bass-slider');
+    const bassVal = document.getElementById('fx-bass-val');
+    if (bassSlider) {
+      bassSlider.value = String(state.bassBoost || 0);
+      if (bassVal) bassVal.textContent = `+${state.bassBoost || 0} дБ`;
+      bassSlider.addEventListener('input', () => {
+        state.bassBoost = Number(bassSlider.value || 0);
+        if (bassVal) bassVal.textContent = `+${state.bassBoost} дБ`;
+        try { localStorage.setItem('elysion_bass_boost', String(state.bassBoost)); } catch {}
+        ensureAudioEq(); updateEqCurveSvg();
+      });
+    }
+    document.getElementById('fx-eq-grid').addEventListener('click', () => setTimeout(updateEqCurveSvg, 30));
+
+    const cfSlider = document.getElementById('fx-crossfade-slider');
+    const cfVal = document.getElementById('fx-crossfade-val');
+    function syncCrossfadeUI() {
+      if (cfSlider) cfSlider.value = String(state.crossfadeSec || 0);
+      if (cfVal) cfVal.textContent = state.crossfadeSec > 0 ? `${state.crossfadeSec} сек` : 'Выкл';
+    }
+    if (cfSlider) {
+      syncCrossfadeUI();
+      cfSlider.addEventListener('input', () => {
+        state.crossfadeSec = Number(cfSlider.value || 0);
+        try { localStorage.setItem('elysion_crossfade', String(state.crossfadeSec)); } catch {}
+        syncCrossfadeUI();
+      });
+    }
+
+    // Smooth Crossfade + Sleep Timer Soft Fade-Out inside timeupdate
+    let crossfadeTriggeredFor = '';
+    audioEl.addEventListener('timeupdate', () => {
+      const dur = audioEl.duration || 0, cur = audioEl.currentTime || 0;
+      if (state.sleepEndTs > 0 && state.isPlaying) {
+        const remSec = (state.sleepEndTs - Date.now()) / 1000;
+        if (remSec > 0 && remSec <= 12) audioEl.volume = Math.max(0.05, remSec / 12);
+      } else if (state.crossfadeSec > 0 && dur > 20 && state.isPlaying) {
+        const rem = dur - cur;
+        if (rem <= state.crossfadeSec && rem > 0.2) {
+          audioEl.volume = Math.max(0.08, rem / state.crossfadeSec);
+          if (rem <= 0.7 && crossfadeTriggeredFor !== state.currentTrackId) {
+            crossfadeTriggeredFor = state.currentTrackId;
+            nextTrack();
+          }
+        } else if (cur < Math.min(2.5, state.crossfadeSec) && audioEl.volume < 0.99) {
+          audioEl.volume = Math.min(1.0, Math.max(0.15, cur / Math.min(2.5, state.crossfadeSec)));
+        } else if (audioEl.volume < 0.99) {
+          audioEl.volume = 1.0;
+        }
+      }
+    });
+    updateEqCurveSvg();
+
+    // =========================================================================
+    // V2.0: ELYSION WRAPPED STORIES (Interactive Slides + Save Card to Gallery)
+    // =========================================================================
+    let wrappedIdx = 0;
+    function getWrappedSlides() {
+      const m = computeMetrics();
+      const topHe = getAllArtistsSummary('he').slice(0, 5);
+      const topShe = getAllArtistsSummary('she').slice(0, 5);
+      const totalMin = Math.max(1, Math.round((m.plays || 1) * 3.1));
+      const matchTrack = state.tracks.find(t => t.likedHe && t.likedShe) || state.tracks[0];
+      return [
+        {
+          html: `
+            <div class="text-xs font-bold uppercase tracking-[0.2em] text-pink-300">Ваша музыка вдвоём</div>
+            <div class="text-5xl font-black mt-3 leading-none">${m.total}</div>
+            <div class="text-sm text-white/75 mt-1">треков в общей вселенной Elysion</div>
+            <div class="grid grid-cols-2 gap-3 mt-6">
+              <div class="glass-soft rounded-2xl p-3.5"><div class="text-2xl font-extrabold">${totalMin}</div><div class="text-[11px] text-white/55 mt-0.5">минут музыки</div></div>
+              <div class="glass-soft rounded-2xl p-3.5"><div class="text-2xl font-extrabold text-pink-300">${m.compat}%</div><div class="text-[11px] text-white/55 mt-0.5">совместимость</div></div>
+            </div>`
+        },
+        {
+          html: `
+            <div class="text-xs font-bold uppercase tracking-[0.2em] text-purple-300">Топ артистов пары</div>
+            <div class="grid grid-cols-2 gap-3 mt-4">
+              <div class="glass-soft rounded-2xl p-3 space-y-1.5">
+                <div class="text-xs font-extrabold text-purple-300 mb-2">Рома</div>
+                ${topHe.map((a, i) => `<div class="text-xs font-bold truncate">${i + 1}. ${escapeHtml(a.name)}</div>`).join('') || '<div class="text-xs text-white/45">—</div>'}
+              </div>
+              <div class="glass-soft rounded-2xl p-3 space-y-1.5">
+                <div class="text-xs font-extrabold text-pink-300 mb-2">Маша</div>
+                ${topShe.map((a, i) => `<div class="text-xs font-bold truncate">${i + 1}. ${escapeHtml(a.name)}</div>`).join('') || '<div class="text-xs text-white/45">—</div>'}
+              </div>
+            </div>`
+        },
+        {
+          html: `
+            <div class="text-xs font-bold uppercase tracking-[0.2em] text-pink-300">Главное совпадение</div>
+            <div class="text-3xl font-black mt-2">${m.matches} общих лайков</div>
+            ${matchTrack ? `
+              <div class="mt-5 glass-card rounded-3xl p-4 flex items-center gap-3.5">
+                <img src="${matchTrack.cover}" alt="" class="w-16 h-16 rounded-2xl object-cover flex-shrink-0" />
+                <div class="min-w-0">
+                  <div class="text-base font-extrabold truncate">${escapeHtml(matchTrack.title)}</div>
+                  <div class="text-xs text-white/65 truncate mt-0.5">${escapeHtml(matchTrack.artist)}</div>
+                </div>
+              </div>` : ''}
+            <div class="text-xs text-white/55 mt-4">Сохрани итоговую карточку пары в Галерею на память</div>`
+        }
+      ];
+    }
+    function renderWrappedSlide() {
+      const slides = getWrappedSlides();
+      wrappedIdx = Math.max(0, Math.min(slides.length - 1, wrappedIdx));
+      document.getElementById('wrapped-progress-bars').innerHTML = slides.map((_, i) =>
+        `<div class="h-1 flex-1 rounded-full overflow-hidden bg-white/20"><div class="h-full rounded-full ${i <= wrappedIdx ? 'bg-white' : 'bg-transparent'} transition-all duration-300"></div></div>`
+      ).join('');
+      document.getElementById('wrapped-slide-content').innerHTML = slides[wrappedIdx].html;
+      document.getElementById('btn-wrapped-prev').classList.toggle('opacity-30', wrappedIdx === 0);
+      const isLast = wrappedIdx === slides.length - 1;
+      document.getElementById('btn-wrapped-next').classList.toggle('hidden', isLast);
+      document.getElementById('btn-wrapped-save').classList.toggle('hidden', !isLast);
+    }
+    document.getElementById('btn-open-wrapped').addEventListener('click', () => {
+      wrappedIdx = 0; renderWrappedSlide();
+      document.getElementById('wrapped-modal').classList.remove('hidden'); haptic(12);
+    });
+    document.getElementById('btn-close-wrapped').addEventListener('click', () => document.getElementById('wrapped-modal').classList.add('hidden'));
+    document.getElementById('btn-wrapped-prev').addEventListener('click', () => { if (wrappedIdx > 0) { wrappedIdx--; haptic(8); renderWrappedSlide(); } });
+    document.getElementById('btn-wrapped-next').addEventListener('click', () => { wrappedIdx++; haptic(8); renderWrappedSlide(); });
+    document.getElementById('btn-wrapped-save').addEventListener('click', async () => {
+      const m = computeMetrics();
+      const topA = getAllArtistsSummary().slice(0, 3).map(a => a.name).join(' · ') || 'Elysion';
+      const c = document.createElement('canvas'); c.width = 1080; c.height = 1350;
+      const ctx = c.getContext('2d');
+      const bg = ctx.createLinearGradient(0, 0, 1080, 1350);
+      bg.addColorStop(0, '#120726'); bg.addColorStop(0.5, '#260E42'); bg.addColorStop(1, '#080412');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, 1080, 1350);
+      ctx.fillStyle = '#F9A8D4'; ctx.font = '700 30px "Plus Jakarta Sans", sans-serif';
+      ctx.fillText('ELYSION WRAPPED · РОМА × МАША', 80, 140);
+      ctx.fillStyle = '#FFFFFF'; ctx.font = '800 130px "Plus Jakarta Sans", sans-serif';
+      ctx.fillText(`${m.compat}%`, 80, 360);
+      ctx.fillStyle = 'rgba(255,255,255,0.75)'; ctx.font = '600 38px "Plus Jakarta Sans", sans-serif';
+      ctx.fillText(`музыкальная совместимость · ${m.matches} общих лайков`, 80, 430);
+      ctx.fillStyle = '#FFFFFF'; ctx.font = '800 54px "Plus Jakarta Sans", sans-serif';
+      ctx.fillText(`${m.total} треков в коллекции`, 80, 620);
+      ctx.fillStyle = 'rgba(255,255,255,0.72)'; ctx.font = '600 36px "Plus Jakarta Sans", sans-serif';
+      ctx.fillText('Главные артисты:', 80, 760);
+      ctx.fillStyle = '#FFFFFF'; ctx.font = '800 44px "Plus Jakarta Sans", sans-serif';
+      ctx.fillText(topA.slice(0, 36), 80, 830);
+      ctx.fillStyle = 'rgba(255,255,255,0.58)'; ctx.font = '600 28px "Cinzel", Georgia, serif';
+      ctx.fillText('E L Y S I O N', 80, 1260);
+      const nativePlugin = window.Capacitor?.Plugins?.ElysionMedia;
+      if (nativePlugin?.saveImage) {
+        try {
+          await nativePlugin.saveImage({ base64: c.toDataURL('image/png'), filename: `elysion_wrapped_${Date.now()}.png` });
+          showToast('Карточка Wrapped сохранена в Галерею!');
+          return;
+        } catch {}
+      }
+      c.toBlob(async (blob) => {
+        if (!blob) return;
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'elysion-wrapped.png'; a.click();
+        showToast('Карточка Wrapped сохранена!');
+      }, 'image/png');
     });
 
     // Boot
