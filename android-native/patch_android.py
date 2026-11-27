@@ -1,4 +1,4 @@
-import os, shutil
+import os, re, shutil
 from PIL import Image
 
 # 1. Generate centered Elysion 16A icons for all Android densities
@@ -17,7 +17,7 @@ for d, sz in sizes.items():
 with open('android/app/src/main/res/values/ic_launcher_background.xml', 'w') as f:
     f.write('<?xml version="1.0" encoding="utf-8"?><resources><color name="ic_launcher_background">#07040F</color></resources>')
 
-# 2. Seamless Android 12+ SplashScreen (solid #07040F + transparent system icon so animated Elysion splash takes over cleanly)
+# 2. Seamless Android 12+ SplashScreen (#07040F + transparent system icon)
 os.makedirs('android/app/src/main/res/values-v31', exist_ok=True)
 with open('android/app/src/main/res/values-v31/styles.xml', 'w') as f:
     f.write('''<?xml version="1.0" encoding="utf-8"?>
@@ -61,12 +61,28 @@ public class MainActivity extends BridgeActivity {
 }
 ''')
 
-# 5. Add androidx.media dependency
+# 5. Configure permanent signing keystore, versionCode 16, versionName 1.6, and androidx.media
+if os.path.exists('android-native/elysion.keystore'):
+    shutil.copy('android-native/elysion.keystore', 'android/app/elysion.keystore')
+
 bg = 'android/app/build.gradle'
 s = open(bg).read()
+s = re.sub(r'versionCode\s+\d+', 'versionCode 16', s)
+s = re.sub(r'versionName\s+"[^"]+"', 'versionName "1.6"', s)
 if 'androidx.media:media:' not in s:
     s = s.replace('dependencies {', 'dependencies {\n    implementation "androidx.media:media:1.7.0"')
-    open(bg, 'w').write(s)
+if 'elysion.keystore' not in s and os.path.exists('android/app/elysion.keystore'):
+    signing_block = '''    signingConfigs {
+        debug {
+            storeFile file("elysion.keystore")
+            storePassword "elysion2026"
+            keyAlias "elysion"
+            keyPassword "elysion2026"
+        }
+    }
+    buildTypes {'''
+    s = s.replace('buildTypes {', signing_block, 1)
+open(bg, 'w').write(s)
 
 # 6. Add permissions & Foreground Media Service to AndroidManifest.xml
 mf = 'android/app/src/main/AndroidManifest.xml'
@@ -88,4 +104,4 @@ svc = '''
 if 'ElysionMediaService' not in ms:
     ms = ms.replace('</application>', svc)
 open(mf, 'w').write(ms)
-print('ANDROID PATCH V1.5 OK')
+print('ANDROID PATCH V1.6 OK (PERMANENT KEYSTORE ENABLED)')
