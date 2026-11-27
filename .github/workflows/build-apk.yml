@@ -15,17 +15,25 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
+      - name: Install Pillow for icon generation
+        run: pip3 install -q pillow
       - name: Prepare web assets
         run: |
           mkdir -p www
-          cp index.html manifest.webmanifest sw.js icon-512.png www/
-      - name: Install Capacitor & build APK
+          cp index.html manifest.webmanifest sw.js splash-16a.jpg icon-512.png icon-1024.png www/
+      - name: Install Capacitor & add Android
         run: |
           npm install
           npx cap add android
           npx cap sync android
-          cd android && chmod +x gradlew && ./gradlew assembleDebug
+      - name: Apply Elysion 16A icons & Native MediaSession
+        run: python3 android-native/patch_android.py
+      - name: Build Elysion v1.1 APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
       - uses: actions/upload-artifact@v4
         with:
-          name: Elysion-OnePlus15-APK
+          name: Elysion-v1.1-OnePlus15-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
