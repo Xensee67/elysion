@@ -1853,8 +1853,9 @@
     // SUPABASE CLOUD LOAD & LIKES
     // =========================================================================
     function mapDbTrack(row, idx) {
-      const cover = row.cover_url || FALLBACK_COVERS[idx % FALLBACK_COVERS.length];
-      const audioUrl = row.tg_file_id ? `${WORKER_URL}/stream/${encodeURIComponent(row.tg_file_id)}` : (row.audio_url || '');
+      const cover = (row.cover_url && (row.cover_url.startsWith('http') || row.cover_url.startsWith('data:'))) ? row.cover_url : FALLBACK_COVERS[idx % FALLBACK_COVERS.length];
+      const ref = row.source_ref || row.tg_file_id || '';
+      const audioUrl = (row.provider === 'telegram' || (!ref.startsWith('http') && ref)) ? `${WORKER_URL}/stream/${encodeURIComponent(ref)}` : (ref || row.audio_url || '');
       return {
         id: row.id,
         title: row.title || 'Без названия',
@@ -1862,9 +1863,9 @@
         duration: Number(row.duration || 180),
         cover,
         audioUrl,
-        addedBy: row.added_by || 'he',
-        likedHe: !!row.liked_he,
-        likedShe: !!row.liked_she
+        addedBy: row.added_by === 'she' ? 'she' : 'he',
+        likedHe: Boolean(row.like_he ?? row.liked_he),
+        likedShe: Boolean(row.like_she ?? row.liked_she)
       };
     }
 
@@ -1897,7 +1898,7 @@
       const u = getUser();
       if (u === 'he') tr.likedHe = !tr.likedHe; else tr.likedShe = !tr.likedShe;
       if (sb) {
-        await sb.from('tracks').update(u === 'he' ? { liked_he: tr.likedHe } : { liked_she: tr.likedShe }).eq('id', tr.id);
+        await sb.from('tracks').update(u === 'he' ? { like_he: tr.likedHe } : { like_she: tr.likedShe }).eq('id', tr.id);
       }
       checkBadges();
       renderAll();
@@ -2335,7 +2336,7 @@
     document.getElementById('btn-create-playlist').addEventListener('click', async () => {
       const name = document.getElementById('new-playlist-name').value.trim();
       if (!name || !sb) return;
-      await sb.from('playlists').insert({ id: `pl-${Date.now()}`, name, created_by: getUser(), cover_url: '' });
+      await sb.from('playlists').insert({ id: `pl-${Date.now()}`, name, description: '', created_by: getUser() });
       document.getElementById('new-playlist-name').value = '';
       document.getElementById('playlist-modal').classList.add('hidden');
       loadCloudLibrary(false);
