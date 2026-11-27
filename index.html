@@ -321,6 +321,40 @@
       #btn-play-main { width: 54px; height: 54px; }
       #shared-playlists-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     }
+
+    /* v2.1: 1:1 Follow-Finger Mini-Player Carousel */
+    #mini-carousel-viewport { flex: 1; min-width: 0; overflow: hidden; touch-action: pan-y; }
+    #mini-carousel-track {
+      display: flex; width: 300%;
+      transform: translate3d(-33.3333%, 0, 0);
+      will-change: transform;
+    }
+    #mini-carousel-track.is-animating { transition: transform 250ms cubic-bezier(0.22, 1, 0.36, 1); }
+    .mini-slide { width: 33.3333%; flex-shrink: 0; display: flex; align-items: center; gap: 10px; min-width: 0; padding-right: 4px; }
+
+    /* v2.1: Visual Track Row Swipe feedback */
+    .track-row.is-swiping { transition: none !important; }
+    .track-row.swipe-hint-right { border-color: rgba(168,85,247,0.65) !important; background: rgba(168,85,247,0.18) !important; }
+    .track-row.swipe-hint-left { border-color: rgba(236,72,153,0.65) !important; background: rgba(236,72,153,0.18) !important; }
+
+    /* v2.1: Active Transport Mode Pill (Repeat / Shuffle) */
+    .transport-pill-btn { width: 40px; height: 40px; border-radius: 13px; display: flex; align-items: center; justify-content: center; transition: background-color 180ms ease, color 180ms ease, transform 140ms ease; position: relative; }
+    .transport-pill-btn.is-on { background: rgba(255,255,255,0.16); color: #ffffff !important; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.14); }
+    .repeat-one-badge { position: absolute; font-size: 9px; font-weight: 900; top: 50%; left: 50%; transform: translate(-50%, -48%); pointer-events: none; }
+
+    /* v2.1: Double-tap Cover Floating Heart */
+    @keyframes coverHeartBurst {
+      0% { opacity: 0; transform: translate(-50%, -50%) scale(0.45); }
+      28% { opacity: 0.96; transform: translate(-50%, -50%) scale(1.14); }
+      70% { opacity: 0.92; transform: translate(-50%, -50%) scale(1.0); }
+      100% { opacity: 0; transform: translate(-50%, -50%) scale(1.25); }
+    }
+    #cover-dbltap-heart {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.45);
+      opacity: 0; pointer-events: none; z-index: 15;
+      filter: drop-shadow(0 8px 24px rgba(236,72,153,0.65));
+    }
+    #cover-dbltap-heart.burst { animation: coverHeartBurst 760ms cubic-bezier(0.22, 1, 0.36, 1) forwards; }
   </style>
 </head>
 <body class="app-booting">
@@ -426,9 +460,14 @@
             <div class="text-2xl font-extrabold mt-0.5 drop-shadow">Наша волна</div>
             <div id="wave-subtitle" class="text-xs text-white/90 mt-1">Совместимость 0% · 0 совпадений</div>
           </div>
-          <button id="btn-play-wave" class="w-12 h-12 rounded-2xl bg-white text-slate-950 flex items-center justify-center shadow-lg active:scale-95 transition">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg>
-          </button>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <button id="btn-wave-settings" class="w-11 h-11 rounded-2xl bg-black/35 backdrop-blur-md border border-white/15 text-white flex items-center justify-center active:scale-95 transition" title="Настроить волну">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+            </button>
+            <button id="btn-play-wave" class="w-12 h-12 rounded-2xl bg-white text-slate-950 flex items-center justify-center shadow-lg active:scale-95 transition">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+            </button>
+          </div>
         </div>
         <div id="wave-mood-chips" class="relative z-10 mt-4 flex gap-1.5 overflow-x-auto no-scrollbar"></div>
       </div>
@@ -477,10 +516,6 @@
         <div id="recent-searches-block" class="space-y-2.5">
           <div class="flex items-center justify-between"><span class="text-xs font-bold uppercase tracking-wider text-white/50">Недавние запросы</span><button id="btn-clear-recent-searches" class="text-xs text-white/45 hover:text-white">Очистить</button></div>
           <div id="recent-searches-list" class="space-y-1.5"></div>
-        </div>
-        <div class="space-y-2.5">
-          <div class="text-xs font-bold uppercase tracking-wider text-white/50">Недавно добавленные</div>
-          <div id="search-recent-tracks" class="space-y-2"></div>
         </div>
       </div>
       <div id="search-results-container" class="hidden space-y-5"></div>
@@ -817,15 +852,29 @@
     <div id="bottom-dock-shell">
       <div id="bottom-dock-inner">
         <div id="mini-player-wrap" class="hidden">
-          <div id="mini-player-card" class="glass-dock rounded-2xl p-2 flex items-center gap-2.5 cursor-pointer active:scale-[0.99] transition">
-            <div class="relative w-11 h-11 rounded-xl overflow-hidden flex-shrink-0 bg-white/10">
-              <img id="mini-cover" src="" alt="" class="w-full h-full object-cover" />
-              <div id="mini-eq" class="eq-paused absolute inset-0 bg-black/40 flex items-center justify-center gap-[3px] text-white"><span class="eq-bar"></span><span class="eq-bar"></span><span class="eq-bar"></span></div>
+          <div id="mini-player-card" class="glass-dock rounded-2xl p-2 flex items-center gap-2 cursor-pointer transition">
+            <div id="mini-carousel-viewport">
+              <div id="mini-carousel-track">
+                <div class="mini-slide">
+                  <div class="relative w-11 h-11 rounded-xl overflow-hidden flex-shrink-0 bg-white/10"><img id="mini-prev-cover" src="" alt="" class="w-full h-full object-cover" /></div>
+                  <div class="flex-1 min-w-0"><div id="mini-prev-title" class="text-sm font-bold truncate opacity-80">—</div><div id="mini-prev-artist" class="text-xs text-white/50 truncate">—</div></div>
+                </div>
+                <div class="mini-slide">
+                  <div class="relative w-11 h-11 rounded-xl overflow-hidden flex-shrink-0 bg-white/10">
+                    <img id="mini-cover" src="" alt="" class="w-full h-full object-cover" />
+                    <div id="mini-eq" class="eq-paused absolute inset-0 bg-black/40 flex items-center justify-center gap-[3px] text-white"><span class="eq-bar"></span><span class="eq-bar"></span><span class="eq-bar"></span></div>
+                  </div>
+                  <div class="flex-1 min-w-0"><div id="mini-title" class="text-sm font-bold truncate">—</div><div id="mini-artist" class="text-xs text-white/55 truncate">—</div></div>
+                </div>
+                <div class="mini-slide">
+                  <div class="relative w-11 h-11 rounded-xl overflow-hidden flex-shrink-0 bg-white/10"><img id="mini-next-cover" src="" alt="" class="w-full h-full object-cover" /></div>
+                  <div class="flex-1 min-w-0"><div id="mini-next-title" class="text-sm font-bold truncate opacity-80">—</div><div id="mini-next-artist" class="text-xs text-white/50 truncate">—</div></div>
+                </div>
+              </div>
             </div>
-            <div class="flex-1 min-w-0"><div id="mini-title" class="text-sm font-bold truncate">—</div><div id="mini-artist" class="text-xs text-white/55 truncate">—</div></div>
-            <button id="btn-mini-like" class="w-8 h-8 rounded-full flex items-center justify-center text-white/70 active:scale-90 transition"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></button>
+            <button id="btn-mini-like" class="w-8 h-8 rounded-full flex items-center justify-center text-white/70 active:scale-90 transition flex-shrink-0"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></button>
             <button id="btn-mini-play" class="w-9 h-9 rounded-full bg-white text-slate-950 flex items-center justify-center flex-shrink-0 active:scale-90 transition"><svg id="mini-play-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg></button>
-            <button id="btn-mini-next" class="w-8 h-8 rounded-full flex items-center justify-center text-white/75 active:scale-90 transition"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="5 4 15 12 5 20 5 4" fill="currentColor"/><line x1="19" y1="5" x2="19" y2="19"/></svg></button>
+            <button id="btn-mini-next" class="w-8 h-8 rounded-full flex items-center justify-center text-white/75 active:scale-90 transition flex-shrink-0"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="5 4 15 12 5 20 5 4" fill="currentColor"/><line x1="19" y1="5" x2="19" y2="19"/></svg></button>
           </div>
         </div>
         <nav id="mobile-bottom-nav" class="md:hidden">
@@ -866,6 +915,7 @@
             <div class="carousel-side-card"><img id="player-prev-cover-img" src="" alt="" class="w-full h-full object-cover pointer-events-none" /></div>
             <div id="player-cover-frame" class="player-cover-frame is-paused rounded-[28px] overflow-hidden border border-white/15">
               <img id="player-cover-img" src="" alt="" class="w-full h-full object-cover pointer-events-none" />
+              <div id="cover-dbltap-heart"><svg width="74" height="74" viewBox="0 0 24 24" fill="#EC4899"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></div>
               <div id="player-speed-badge" class="hidden absolute top-3 right-3 px-2.5 py-1 rounded-full bg-black/65 backdrop-blur-md text-[10px] font-bold text-white">1.0×</div>
               <div id="player-sleep-badge" class="hidden absolute top-3 left-3 px-2.5 py-1 rounded-full bg-black/65 backdrop-blur-md text-[10px] font-bold text-pink-200 flex items-center gap-1">
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
@@ -913,13 +963,19 @@
 
       <!-- Title + Waveform + Controls + 5-Icon Dock (Isolated from vertical collapse drag!) -->
       <div id="player-bottom-controls" class="space-y-3">
-        <div id="player-title-block" class="text-center px-2">
-          <div id="player-title" class="text-xl font-extrabold tracking-tight truncate">—</div>
-          <button id="btn-player-artist" class="text-sm text-white/75 hover:text-white active:opacity-70 truncate max-w-full mt-0.5 inline-block">—</button>
-          <div id="player-moment-pill" class="hidden mt-1.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/8 border border-white/10 text-[11px] text-pink-200/90 max-w-full truncate">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" class="flex-shrink-0"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            <span id="player-moment-text" class="truncate"></span>
+        <div id="player-title-block" class="flex items-center justify-between gap-3 px-1">
+          <div class="min-w-0 flex-1 text-left">
+            <div id="player-title" class="text-xl font-extrabold tracking-tight truncate">—</div>
+            <button id="btn-player-artist" class="text-sm text-white/75 hover:text-white active:opacity-70 truncate max-w-full mt-0.5 block text-left">—</button>
+            <div id="player-moment-pill" class="hidden mt-1.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/8 border border-white/10 text-[11px] text-pink-200/90 max-w-full truncate">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" class="flex-shrink-0"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              <span id="player-moment-text" class="truncate"></span>
+            </div>
           </div>
+          <button id="btn-dual-like" class="px-3.5 h-10 rounded-full glass-soft flex items-center gap-2 active:scale-95 transition flex-shrink-0">
+            <svg id="heart-he" width="16" height="16" viewBox="0 0 24 24" fill="#A855F7" class="opacity-30 transition"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            <svg id="heart-she" width="16" height="16" viewBox="0 0 24 24" fill="#EC4899" class="opacity-30 transition"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+          </button>
         </div>
 
         <div id="player-transport-wrap" class="space-y-3">
@@ -933,22 +989,23 @@
             </div>
           </div>
 
-          <div class="flex items-center justify-center gap-8 py-0.5">
+          <div class="flex items-center justify-between px-1 py-0.5">
+            <button id="btn-repeat" class="transport-pill-btn text-white/60 active:scale-90" title="Повтор">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+              <span id="repeat-one-badge" class="repeat-one-badge hidden">1</span>
+            </button>
             <button id="btn-prev" class="w-11 h-11 rounded-full flex items-center justify-center text-white/90 active:scale-90 transition"><svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5" stroke="currentColor" stroke-width="2.4"/></svg></button>
             <button id="btn-play-main" class="w-[66px] h-[66px] rounded-full bg-white text-slate-950 flex items-center justify-center shadow-[0_12px_34px_rgba(255,255,255,0.28)] active:scale-95 transition"><svg id="main-play-icon" width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg></button>
             <button id="btn-next" class="w-11 h-11 rounded-full flex items-center justify-center text-white/90 active:scale-90 transition"><svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="2.4"/></svg></button>
+            <button id="btn-shuffle" class="transport-pill-btn text-white/60 active:scale-90" title="Перемешать"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg></button>
           </div>
         </div>
 
-        <div id="player-action-dock" class="flex items-center justify-between px-1">
+        <div id="player-action-dock" class="flex items-center justify-around px-1 pt-0.5">
           <button id="btn-toggle-lyrics" class="w-10 h-10 rounded-2xl flex items-center justify-center text-sm font-extrabold text-white/75 active:scale-90 transition">Тт</button>
-          <button id="btn-shuffle" class="w-10 h-10 rounded-2xl flex items-center justify-center text-white/65 active:scale-90 transition"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg></button>
-          <button id="btn-dual-like" class="px-4 h-10 rounded-full glass-soft flex items-center gap-2.5 active:scale-95 transition">
-            <svg id="heart-he" width="17" height="17" viewBox="0 0 24 24" fill="#A855F7" class="opacity-30 transition"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-            <svg id="heart-she" width="17" height="17" viewBox="0 0 24 24" fill="#EC4899" class="opacity-30 transition"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-          </button>
           <button id="btn-open-fx" class="w-10 h-10 rounded-2xl flex items-center justify-center text-white/70 active:scale-90 transition"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg></button>
           <button id="btn-open-queue" class="w-10 h-10 rounded-2xl flex items-center justify-center text-white/70 active:scale-90 transition"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
+          <button id="btn-player-track-menu" class="w-10 h-10 rounded-2xl flex items-center justify-center text-white/70 active:scale-90 transition" title="Меню трека"><svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg></button>
         </div>
       </div>
     </div>
@@ -1083,6 +1140,33 @@
           <button id="btn-wrapped-next" class="px-4 py-2.5 rounded-full bg-white text-slate-950 text-xs font-extrabold active:scale-95 transition">Далее</button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- SPRING SHEET: SHARED WAVE 2.0 SETTINGS -->
+  <div id="wave-settings-modal" class="sheet-backdrop">
+    <div class="sheet-panel glass-strong space-y-4">
+      <div class="w-10 h-1 rounded-full bg-white/20 mx-auto"></div>
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 class="text-base font-extrabold">Настройка Нашей волны</h3>
+          <p class="text-[11px] text-white/55">Подбери идеальный баланс и настроение для вас двоих</p>
+        </div>
+        <button data-close-sheet="wave-settings-modal" class="w-8 h-8 rounded-full bg-white/10 text-xs flex items-center justify-center">✕</button>
+      </div>
+      <div class="space-y-1.5">
+        <div class="text-[11px] font-bold uppercase tracking-wider text-white/50">Баланс пары</div>
+        <div id="ws-balance-row" class="grid grid-cols-2 gap-2"></div>
+      </div>
+      <div class="space-y-1.5">
+        <div class="text-[11px] font-bold uppercase tracking-wider text-white/50">Характер</div>
+        <div id="ws-char-row" class="grid grid-cols-2 gap-2"></div>
+      </div>
+      <div class="space-y-1.5">
+        <div class="text-[11px] font-bold uppercase tracking-wider text-white/50">Вайб</div>
+        <div id="ws-vibe-row" class="grid grid-cols-2 gap-2"></div>
+      </div>
+      <button id="btn-wave-apply-play" class="w-full py-3.5 rounded-2xl accent-grad text-xs font-extrabold text-white shadow-lg active:scale-95 transition">Запустить волну с этими настройками</button>
     </div>
   </div>
 
@@ -1272,7 +1356,7 @@
       activeArtistName: '',
       searchQuery: '',
       searchFilter: 'all',
-      sortMode: localStorage.getItem('elysion_sort_mode') || 'default', lyricOffsets: JSON.parse(localStorage.getItem('elysion_lyric_offsets') || '{}'), infiniteWave: localStorage.getItem('elysion_infinite_wave') !== '0', crossfadeSec: Number(localStorage.getItem('elysion_crossfade') || 0), bassBoost: Number(localStorage.getItem('elysion_bass_boost') || 0), playlistSearch: '',
+      sortMode: localStorage.getItem('elysion_sort_mode') || 'default', lyricOffsets: JSON.parse(localStorage.getItem('elysion_lyric_offsets') || '{}'), infiniteWave: localStorage.getItem('elysion_infinite_wave') !== '0', crossfadeSec: Number(localStorage.getItem('elysion_crossfade') || 0), bassBoost: Number(localStorage.getItem('elysion_bass_boost') || 0), playlistSearch: '', repeatMode: localStorage.getItem('elysion_repeat_mode') || 'off', waveBalance: localStorage.getItem('elysion_wave_balance') || '50-50', waveChar: localStorage.getItem('elysion_wave_char') || 'all', waveVibe: localStorage.getItem('elysion_wave_vibe') || 'any',
       playerOpen: false,
       playerMode: 'cover', // 'cover' | 'lyrics' | 'queue'
       playContextLabel: 'Вся коллекция',
@@ -1627,7 +1711,7 @@
     }
 
     function closeAnyModal() {
-      for (const sid of ['elysion-dialog-modal', 'sort-modal', 'fx-modal', 'track-menu-modal', 'artist-picker-modal']) {
+      for (const sid of ['elysion-dialog-modal', 'wave-settings-modal', 'sort-modal', 'fx-modal', 'track-menu-modal', 'artist-picker-modal']) {
         const s = document.getElementById(sid);
         if (s && s.classList.contains('is-open')) { closeSpringSheet(sid); return true; }
       }
@@ -2367,14 +2451,20 @@
         { id: 'smart-forgotten', name: 'Давно не слушали', sub: `${getPlaylistTracks('smart-forgotten').length} треков`, cover: FALLBACK_COVERS[1] },
         { id: 'all', name: 'Вся коллекция', sub: `${state.tracks.length} треков`, cover: FALLBACK_COVERS[1] }
       ];
-      document.getElementById('shared-playlists-grid').innerHTML = cards.map(c => `
+      document.getElementById('shared-playlists-grid').innerHTML = cards.map(c => {
+        const isSmart = ['matches', 'smart-repeat', 'smart-partner', 'smart-forgotten', 'all'].includes(c.id);
+        const collageCovers = isSmart ? [...new Set(getPlaylistTracks(c.id).map(t => t.cover).filter(Boolean))].slice(0, 4) : [];
+        const bgMedia = collageCovers.length >= 4
+          ? `<div class="absolute inset-0 grid grid-cols-2 grid-rows-2 opacity-65">${collageCovers.map(u => `<img src="${u}" alt="" class="w-full h-full object-cover" loading="lazy" />`).join('')}</div>`
+          : `<img src="${c.cover}" alt="" class="absolute inset-0 w-full h-full object-cover opacity-60" loading="lazy" />`;
+        return `
         <button data-open-pl="${c.id}" class="relative h-28 rounded-2xl overflow-hidden text-left p-3 flex flex-col justify-end border border-white/10 active:scale-[0.98] transition">
-          <img src="${c.cover}" alt="" class="absolute inset-0 w-full h-full object-cover opacity-60" />
-          <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent"></div>
+          ${bgMedia}
+          <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent"></div>
           <div class="relative z-10 text-sm font-extrabold truncate">${escapeHtml(c.name)}</div>
           <div class="relative z-10 text-[11px] text-white/70">${escapeHtml(c.sub)}</div>
-        </button>
-      `).join('');
+        </button>`;
+      }).join('');
       const visibleTracks = sortTrackList(state.tracks);
       const sortLbl = document.getElementById('lib-sort-label');
       if (sortLbl) sortLbl.textContent = (SORT_OPTIONS.find(o => o.id === state.sortMode) || SORT_OPTIONS[0]).label;
@@ -2415,9 +2505,7 @@
               <button data-recent-q="${escapeHtml(term)}" class="w-full py-2.5 px-3.5 rounded-2xl glass-soft flex items-center gap-3 text-left text-sm font-semibold text-white/85 active:scale-[0.99] transition"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white/45 flex-shrink-0"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span class="truncate">${escapeHtml(term)}</span></button>
             `).join('')
           : '<div class="text-xs text-white/40 py-2">Здесь появятся твои недавние поисковые запросы</div>';
-        const recentAdded = state.tracks.slice(0, 6);
-        const recBox = document.getElementById('search-recent-tracks');
-        if (recBox) recBox.innerHTML = recentAdded.map(tr => buildTrackRowHtml(tr, 'all')).join('');
+
         document.getElementById('search-browse-artists').innerHTML = getAllArtistsSummary().slice(0, 12).map(a => `
           <button data-open-artist="${escapeHtml(a.name)}" class="flex flex-col items-center w-20 flex-shrink-0 active:scale-95 transition"><img src="${a.photo}" alt="" class="rounded-full object-cover border border-white/15 shadow" style="width:72px;height:72px;" /><div class="text-xs font-bold truncate w-full text-center mt-2">${escapeHtml(a.name)}</div><div class="text-[10px] text-white/45">${a.count} тр.</div></button>
         `).join('');
@@ -2462,9 +2550,20 @@
       const tr = getCurrentTrack(), wrap = document.getElementById('mini-player-wrap');
       if (!tr) { wrap.classList.add('hidden'); return; }
       wrap.classList.remove('hidden');
+      const { prev, next } = getNeighborTracks();
       document.getElementById('mini-cover').src = tr.cover;
       document.getElementById('mini-title').textContent = tr.title;
       document.getElementById('mini-artist').textContent = tr.artist;
+      if (prev) {
+        document.getElementById('mini-prev-cover').src = prev.cover;
+        document.getElementById('mini-prev-title').textContent = prev.title;
+        document.getElementById('mini-prev-artist').textContent = prev.artist;
+      }
+      if (next) {
+        document.getElementById('mini-next-cover').src = next.cover;
+        document.getElementById('mini-next-title').textContent = next.title;
+        document.getElementById('mini-next-artist').textContent = next.artist;
+      }
       document.getElementById('mini-eq').classList.toggle('eq-paused', !state.isPlaying);
       document.getElementById('mini-play-icon').innerHTML = state.isPlaying ? '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>' : '<polygon points="6 4 20 12 6 20 6 4"/>';
       document.getElementById('btn-mini-like').style.color = (getUser() === 'he' ? tr.likedHe : tr.likedShe) ? 'var(--accent-2)' : 'rgba(255,255,255,0.4)';
@@ -3010,6 +3109,7 @@
     audioEl.addEventListener('timeupdate', () => { if (!state.scrubbing) updateWaveformVisuals(-1); syncActiveLyricLine(audioEl.currentTime || 0, false); syncNativeAndroidMedia(getCurrentTrack(), false); });
     audioEl.addEventListener('ended', () => {
       if (state.sleepMode === 'track') { state.sleepMode = '0'; state.sleepEndTs = 0; pauseTrack(); renderSleepStatus(); showToast('Трек завершился — таймер сна остановлен'); }
+      else if (state.repeatMode === 'one') { audioEl.currentTime = 0; audioEl.play().catch(() => {}); }
       else nextTrack();
     });
 
@@ -3481,44 +3581,94 @@
       renderPlaylistDetailView();
     });
 
-    // Mini-player horizontal swipe -> Next / Prev track!
-    (function wireMiniPlayerSwipe() {
-      const mp = document.getElementById('mini-player-wrap');
-      if (!mp) return;
-      let sx = 0, sy = 0, active = false;
-      mp.addEventListener('touchstart', (e) => {
+    // V2.1: 1:1 FOLLOW-FINGER MINI-PLAYER CAROUSEL SWIPE
+    (function wireMiniPlayerCarousel() {
+      const vp = document.getElementById('mini-carousel-viewport');
+      const track = document.getElementById('mini-carousel-track');
+      if (!vp || !track) return;
+      let sx = 0, sy = 0, dx = 0, dragging = false, locked = null, suppressClickUntil = 0;
+
+      vp.addEventListener('touchstart', (e) => {
         if (e.touches.length !== 1) return;
-        sx = e.touches[0].clientX; sy = e.touches[0].clientY; active = true;
+        sx = e.touches[0].clientX; sy = e.touches[0].clientY; dx = 0; dragging = true; locked = null;
+        track.classList.remove('is-animating');
       }, { passive: true });
-      mp.addEventListener('touchend', (e) => {
-        if (!active) return; active = false;
-        const dx = (e.changedTouches[0]?.clientX || sx) - sx;
-        const dy = Math.abs((e.changedTouches[0]?.clientY || sy) - sy);
-        if (Math.abs(dx) > 54 && dy < 40) {
-          haptic(12);
-          if (dx < 0) nextTrack(); else prevTrack();
+
+      vp.addEventListener('touchmove', (e) => {
+        if (!dragging || e.touches.length !== 1) return;
+        const curX = e.touches[0].clientX - sx, curY = e.touches[0].clientY - sy;
+        if (!locked) {
+          if (Math.abs(curX) > 8 || Math.abs(curY) > 8) locked = Math.abs(curX) > Math.abs(curY) ? 'h' : 'v';
+        }
+        if (locked === 'h') {
+          dx = Math.max(-vp.clientWidth * 0.95, Math.min(vp.clientWidth * 0.95, curX));
+          track.style.transform = `translate3d(calc(-33.3333% + ${dx}px), 0, 0)`;
         }
       }, { passive: true });
+
+      vp.addEventListener('touchend', () => {
+        if (!dragging) return; dragging = false;
+        if (locked !== 'h') { dx = 0; return; }
+        suppressClickUntil = Date.now() + 260;
+        const w = vp.clientWidth || 200;
+        track.classList.add('is-animating');
+        if (dx < -Math.min(62, w * 0.24)) {
+          haptic(12);
+          track.style.transform = 'translate3d(-66.6666%, 0, 0)';
+          setTimeout(() => {
+            nextTrack();
+            track.classList.remove('is-animating');
+            track.style.transform = 'translate3d(-33.3333%, 0, 0)';
+          }, 250);
+        } else if (dx > Math.min(62, w * 0.24)) {
+          haptic(12);
+          track.style.transform = 'translate3d(0%, 0, 0)';
+          setTimeout(() => {
+            prevTrack();
+            track.classList.remove('is-animating');
+            track.style.transform = 'translate3d(-33.3333%, 0, 0)';
+          }, 250);
+        } else {
+          track.style.transform = 'translate3d(-33.3333%, 0, 0)';
+        }
+      }, { passive: true });
+
+      vp.addEventListener('click', (e) => {
+        if (Date.now() < suppressClickUntil) { e.stopPropagation(); e.preventDefault(); }
+      }, true);
     })();
 
-    // Track row quick swipe: Right -> Play Next, Left -> Toggle Like
-    (function wireTrackRowSwipe() {
-      let sx = 0, sy = 0, rowEl = null;
+    // V2.1: VISUAL 1:1 TRACK ROW SWIPE (Right -> Play Next, Left -> Toggle Like)
+    (function wireTrackRowSwipeVisual() {
+      let sx = 0, sy = 0, dx = 0, rowEl = null, locked = null;
       document.addEventListener('touchstart', (e) => {
         const r = e.target.closest('.track-row');
-        if (!r || e.touches.length !== 1) { rowEl = null; return; }
-        sx = e.touches[0].clientX; sy = e.touches[0].clientY; rowEl = r;
+        if (!r || e.touches.length !== 1 || e.target.closest('button')) { rowEl = null; return; }
+        sx = e.touches[0].clientX; sy = e.touches[0].clientY; dx = 0; rowEl = r; locked = null;
       }, { passive: true });
-      document.addEventListener('touchend', (e) => {
+      document.addEventListener('touchmove', (e) => {
+        if (!rowEl || e.touches.length !== 1) return;
+        const curX = e.touches[0].clientX - sx, curY = e.touches[0].clientY - sy;
+        if (!locked && (Math.abs(curX) > 10 || Math.abs(curY) > 10)) {
+          locked = Math.abs(curX) > Math.abs(curY) * 1.25 ? 'h' : 'v';
+          if (locked === 'h') rowEl.classList.add('is-swiping');
+        }
+        if (locked === 'h') {
+          dx = Math.max(-92, Math.min(92, curX * 0.72));
+          rowEl.style.transform = `translate3d(${dx}px, 0, 0)`;
+          rowEl.classList.toggle('swipe-hint-right', dx > 42);
+          rowEl.classList.toggle('swipe-hint-left', dx < -42);
+        }
+      }, { passive: true });
+      document.addEventListener('touchend', () => {
         if (!rowEl) return;
-        const targetRow = rowEl; rowEl = null;
-        const dx = (e.changedTouches[0]?.clientX || sx) - sx;
-        const dy = Math.abs((e.changedTouches[0]?.clientY || sy) - sy);
-        if (Math.abs(dx) > 78 && dy < 36) {
-          const tid = targetRow.dataset.trackId;
-          if (!tid) return;
-          if (dx > 0) queuePlayNext(tid);
-          else toggleLike(tid);
+        const target = rowEl, finalDx = dx, wasH = locked === 'h';
+        rowEl = null; dx = 0; locked = null;
+        target.classList.remove('is-swiping', 'swipe-hint-right', 'swipe-hint-left');
+        target.style.transform = '';
+        if (wasH && Math.abs(finalDx) > 54) {
+          const tid = target.dataset.trackId;
+          if (tid) { if (finalDx > 0) queuePlayNext(tid); else toggleLike(tid); }
         }
       }, { passive: true });
     })();
@@ -3780,6 +3930,139 @@
         showToast('Карточка Wrapped сохранена!');
       }, 'image/png');
     });
+
+
+    // =========================================================================
+    // V2.1: REPEAT MODE, PLAYER TRACK MENU, DOUBLE-TAP COVER LIKE & WAVE 2.0
+    // =========================================================================
+    function syncTransportPills() {
+      const repBtn = document.getElementById('btn-repeat');
+      const repOne = document.getElementById('repeat-one-badge');
+      const shufBtn = document.getElementById('btn-shuffle');
+      if (repBtn) repBtn.classList.toggle('is-on', state.repeatMode !== 'off');
+      if (repOne) repOne.classList.toggle('hidden', state.repeatMode !== 'one');
+      if (shufBtn) shufBtn.classList.toggle('is-on', !!state.shuffle);
+    }
+    document.getElementById('btn-repeat').addEventListener('click', () => {
+      const order = ['off', 'all', 'one'];
+      state.repeatMode = order[(order.indexOf(state.repeatMode) + 1) % order.length];
+      try { localStorage.setItem('elysion_repeat_mode', state.repeatMode); } catch {}
+      haptic(10); syncTransportPills();
+      showToast(state.repeatMode === 'one' ? 'Повтор 1 трека' : state.repeatMode === 'all' ? 'Повтор очереди' : 'Повтор выключен');
+    });
+    document.getElementById('btn-shuffle').addEventListener('click', () => setTimeout(syncTransportPills, 20));
+    syncTransportPills();
+
+    document.getElementById('btn-player-track-menu').addEventListener('click', () => {
+      const tr = getCurrentTrack();
+      if (tr) openTrackMenu(tr.id);
+    });
+
+    // Double-tap on Player Cover -> Like with smooth heart burst!
+    (function wireCoverDoubleTap() {
+      const frame = document.getElementById('player-cover-frame');
+      const heart = document.getElementById('cover-dbltap-heart');
+      if (!frame || !heart) return;
+      let lastTap = 0;
+      frame.addEventListener('touchend', (e) => {
+        if (e.changedTouches.length !== 1) return;
+        const now = Date.now();
+        if (now - lastTap < 300) {
+          lastTap = 0;
+          const tr = getCurrentTrack();
+          if (!tr) return;
+          const myLiked = getUser() === 'he' ? tr.likedHe : tr.likedShe;
+          if (!myLiked) toggleLike(tr.id);
+          else haptic(12);
+          heart.classList.remove('burst'); void heart.offsetWidth; heart.classList.add('burst');
+        } else {
+          lastTap = now;
+        }
+      }, { passive: true });
+    })();
+
+    // Shared Wave 2.0 Settings Sheet + Smart Queue Builder
+    const WAVE_BALANCES = [
+      { id: '50-50', label: '50 на 50' },
+      { id: 'he', label: 'Больше Ромы' },
+      { id: 'she', label: 'Больше Маши' },
+      { id: 'matches', label: 'Только совпадения' }
+    ];
+    const WAVE_CHARS = [
+      { id: 'all', label: 'Всё подряд' },
+      { id: 'fav', label: 'Любимое' },
+      { id: 'forgotten', label: 'Давно не слушали' },
+      { id: 'discover', label: 'Открытия' }
+    ];
+    const WAVE_VIBES = [
+      { id: 'any', label: 'Любой' },
+      { id: 'night', label: 'Ночной' },
+      { id: 'energy', label: 'Энергичный' },
+      { id: 'calm', label: 'Спокойный' }
+    ];
+    function renderWaveSettingsSheet() {
+      const mkBtn = (group, item, active) =>
+        `<button data-ws-group="${group}" data-ws-val="${item.id}" class="py-2.5 px-3 rounded-2xl text-xs font-bold border transition ${active ? 'bg-white/15 border-pink-400/55 text-white shadow' : 'bg-white/5 border-white/5 text-white/70'}">${item.label}</button>`;
+      document.getElementById('ws-balance-row').innerHTML = WAVE_BALANCES.map(i => mkBtn('balance', i, state.waveBalance === i.id)).join('');
+      document.getElementById('ws-char-row').innerHTML = WAVE_CHARS.map(i => mkBtn('char', i, state.waveChar === i.id)).join('');
+      document.getElementById('ws-vibe-row').innerHTML = WAVE_VIBES.map(i => mkBtn('vibe', i, state.waveVibe === i.id)).join('');
+    }
+    document.getElementById('btn-wave-settings').addEventListener('click', (e) => {
+      e.stopPropagation(); haptic(10); renderWaveSettingsSheet(); openSpringSheet('wave-settings-modal');
+    });
+    document.getElementById('wave-settings-modal').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-ws-group]'); if (!b) return;
+      const g = b.dataset.wsGroup, v = b.dataset.wsVal;
+      if (g === 'balance') { state.waveBalance = v; try { localStorage.setItem('elysion_wave_balance', v); } catch {} }
+      if (g === 'char') { state.waveChar = v; try { localStorage.setItem('elysion_wave_char', v); } catch {} }
+      if (g === 'vibe') { state.waveVibe = v; try { localStorage.setItem('elysion_wave_vibe', v); } catch {} }
+      haptic(8); renderWaveSettingsSheet();
+    });
+    function launchConfiguredWave() {
+      if (!state.tracks.length) return;
+      let pool = state.tracks.slice();
+      if (state.waveBalance === 'matches') pool = pool.filter(t => t.likedHe && t.likedShe);
+      else if (state.waveBalance === 'he') pool = pool.filter(t => t.likedHe);
+      else if (state.waveBalance === 'she') pool = pool.filter(t => t.likedShe);
+      if (state.waveChar === 'forgotten') {
+        const rec = new Set(getMyStats().recentIds || []);
+        const f = pool.filter(t => !rec.has(t.id));
+        if (f.length) pool = f;
+      } else if (state.waveChar === 'discover') {
+        const p = getPartner();
+        const d = pool.filter(t => p === 'he' ? (t.likedHe && !t.likedShe) : (t.likedShe && !t.likedHe));
+        if (d.length) pool = d;
+      } else if (state.waveChar === 'fav') {
+        const fv = pool.filter(t => t.likedHe || t.likedShe);
+        if (fv.length) pool = fv;
+      }
+      if (!pool.length) pool = state.tracks.slice();
+      for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+      const bLbl = (WAVE_BALANCES.find(x => x.id === state.waveBalance) || WAVE_BALANCES[0]).label;
+      playTrack(pool[0].id, true, false, pool.map(t => t.id), `Наша волна · ${bLbl}`);
+      openPlayerSheet(true);
+    }
+    document.getElementById('btn-wave-apply-play').addEventListener('click', () => {
+      closeSpringSheet('wave-settings-modal'); haptic(14); launchConfiguredWave();
+    });
+
+    // Subtle audio-reactive pulse on Shared Wave Card while playing
+    (function wireWavePulse() {
+      const card = document.getElementById('shared-wave-card');
+      if (!card) return;
+      let t = 0;
+      const step = () => {
+        if (state.isPlaying && state.activeView === 'library' && !state.playerOpen) {
+          t += 0.045;
+          const pulse = 1 + Math.sin(t) * 0.012;
+          card.style.boxShadow = `0 12px ${Math.round(32 + Math.sin(t) * 10)}px rgba(236,72,153,${(0.22 + Math.sin(t) * 0.08).toFixed(2)})`;
+          const cvs = document.getElementById('wave-canvas');
+          if (cvs) cvs.style.transform = `scale(${pulse.toFixed(4)})`;
+        }
+        requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    })();
 
     // Boot
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
