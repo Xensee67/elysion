@@ -36,6 +36,7 @@ public class ElysionMediaService extends Service {
             @Override public void onPause() { ElysionMediaPlugin.emitAction("pause"); }
             @Override public void onSkipToNext() { ElysionMediaPlugin.emitAction("next"); }
             @Override public void onSkipToPrevious() { ElysionMediaPlugin.emitAction("prev"); }
+            @Override public void onSeekTo(long pos) { ElysionMediaPlugin.emitSeek(pos); }
         });
         mediaSession.setActive(true);
     }
@@ -89,7 +90,7 @@ public class ElysionMediaService extends Service {
         int pbState = isPlaying ? PlaybackStateCompat.STATE_PLAYING : PlaybackStateCompat.STATE_PAUSED;
         long actions = PlaybackStateCompat.ACTION_PLAY | PlaybackStateCompat.ACTION_PAUSE |
                        PlaybackStateCompat.ACTION_PLAY_PAUSE | PlaybackStateCompat.ACTION_SKIP_TO_NEXT |
-                       PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS;
+                       PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS | PlaybackStateCompat.ACTION_SEEK_TO;
         mediaSession.setPlaybackState(new PlaybackStateCompat.Builder()
             .setState(pbState, position, isPlaying ? 1.0f : 0.0f)
             .setActions(actions)
@@ -112,8 +113,7 @@ public class ElysionMediaService extends Service {
             .addAction(android.R.drawable.ic_media_next, "Next", servicePi("ACTION_NEXT", 3))
             .setStyle(new MediaStyle().setMediaSession(mediaSession.getSessionToken()).setShowActionsInCompactView(0, 1, 2));
 
-        Notification notif = nb.build();
-        startForeground(NOTIF_ID, notif);
+        startForeground(NOTIF_ID, nb.build());
     }
 
     private PendingIntent servicePi(String action, int reqCode) {

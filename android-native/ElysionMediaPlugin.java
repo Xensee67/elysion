@@ -22,6 +22,15 @@ public class ElysionMediaPlugin extends Plugin {
         }
     }
 
+    public static void emitSeek(long posMs) {
+        if (instance != null) {
+            JSObject data = new JSObject();
+            data.put("action", "seek");
+            data.put("position", posMs);
+            instance.notifyListeners("mediaAction", data);
+        }
+    }
+
     @PluginMethod
     public void updateState(PluginCall call) {
         Intent i = new Intent(getContext(), ElysionMediaService.class);

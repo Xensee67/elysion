@@ -54,33 +54,64 @@
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
-    .font-brand { font-family: 'Cinzel', Georgia, serif; letter-spacing: 0.22em; }
+    .font-brand { font-family: 'Cinzel', Georgia, serif; letter-spacing: 0.24em; }
 
+    /* Live Adaptive Mesh Background */
     .mesh-bg { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; background: #08050e; }
     .mesh-orb {
       position: absolute; border-radius: 9999px; filter: blur(95px); opacity: 0.54;
       transition: background 1.2s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.8s ease;
       will-change: transform;
     }
-    .mesh-player-boost .mesh-orb { opacity: 0.72; }
+    .mesh-player-boost .mesh-orb { opacity: 0.74; }
     .mesh-orb-1 { width: 72vmax; height: 72vmax; top: -24vmax; left: -20vmax; background: radial-gradient(circle, var(--bg-orb-1, var(--accent-1)) 0%, transparent 70%); animation: drift1 18s ease-in-out infinite alternate; }
     .mesh-orb-2 { width: 66vmax; height: 66vmax; bottom: -24vmax; right: -18vmax; background: radial-gradient(circle, var(--bg-orb-2, var(--accent-2)) 0%, transparent 70%); animation: drift2 22s ease-in-out infinite alternate; }
     .mesh-orb-3 { width: 48vmax; height: 48vmax; top: 28%; left: 32%; background: radial-gradient(circle, var(--bg-orb-3, var(--accent-1)) 0%, transparent 72%); opacity: 0.38; animation: drift3 16s ease-in-out infinite alternate; }
     .mesh-vignette { position: absolute; inset: 0; background: radial-gradient(circle at 50% 28%, rgba(9, 6, 15, 0.10) 0%, rgba(9, 6, 15, 0.78) 100%); transition: opacity 0.6s ease; }
-    .mesh-player-boost .mesh-vignette { background: radial-gradient(circle at 50% 34%, rgba(9, 6, 15, 0.04) 0%, rgba(9, 6, 15, 0.64) 100%); }
+    .mesh-player-boost .mesh-vignette { background: radial-gradient(circle at 50% 34%, rgba(9, 6, 15, 0.04) 0%, rgba(9, 6, 15, 0.62) 100%); }
     @keyframes drift1 { 0% { transform: translate(0,0) scale(1); } 100% { transform: translate(11%,9%) scale(1.12); } }
     @keyframes drift2 { 0% { transform: translate(0,0) scale(1.05); } 100% { transform: translate(-11%,-8%) scale(0.95); } }
     @keyframes drift3 { 0% { transform: translate(-8%,6%) scale(0.92); } 100% { transform: translate(10%,-9%) scale(1.12); } }
 
+    /* Razor-Sharp Infinite-Resolution Vector Splash Screen */
     #splash-screen {
       position: fixed; inset: 0; z-index: 100; background: #07050c;
-      display: flex; align-items: center; justify-content: center;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      overflow: hidden;
       transition: opacity 0.55s ease, visibility 0.55s ease;
     }
     #splash-screen.splash-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
-    .splash-img { width: 100%; height: 100%; object-fit: cover; animation: splashReveal 1.15s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-    @media (min-width: 640px) { .splash-img { object-fit: contain; } }
-    @keyframes splashReveal { 0% { opacity: 0; transform: scale(1.04); } 100% { opacity: 1; transform: scale(1); } }
+    .splash-mist-1 {
+      position: absolute; width: 70vmax; height: 70vmax; border-radius: 50%;
+      background: radial-gradient(circle, rgba(147, 51, 234, 0.38) 0%, transparent 68%);
+      filter: blur(80px); bottom: -22vmax; left: -24vmax;
+    }
+    .splash-mist-2 {
+      position: absolute; width: 65vmax; height: 65vmax; border-radius: 50%;
+      background: radial-gradient(circle, rgba(219, 39, 119, 0.34) 0%, transparent 68%);
+      filter: blur(85px); top: -20vmax; right: -22vmax;
+    }
+    .splash-content {
+      position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 22px;
+      animation: splashEnter 1.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .splash-stars {
+      filter: drop-shadow(0 0 22px rgba(255, 255, 255, 0.42)) drop-shadow(0 0 36px rgba(236, 72, 153, 0.35));
+      animation: starBreathe 2.6s ease-in-out infinite alternate;
+    }
+    .splash-wordmark {
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: clamp(28px, 7.5vw, 40px);
+      font-weight: 500;
+      letter-spacing: 0.30em;
+      padding-left: 0.30em;
+      background: linear-gradient(180deg, #ffffff 0%, #d8d4e8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 2px 18px rgba(255,255,255,0.18));
+    }
+    @keyframes splashEnter { 0% { opacity: 0; transform: scale(0.94) translateY(8px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
+    @keyframes starBreathe { 0% { transform: scale(1); } 100% { transform: scale(1.045); } }
 
     .glass { background: var(--glass-bg); backdrop-filter: blur(26px); -webkit-backdrop-filter: blur(26px); border: 1px solid var(--glass-border); }
     .glass-soft { background: rgba(255, 255, 255, 0.06); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border: 1px solid rgba(255, 255, 255, 0.09); }
@@ -89,31 +120,53 @@
     .app-scroll-pane {
       height: 100%; overflow-y: auto; overscroll-behavior-y: contain; -webkit-overflow-scrolling: touch;
       padding-top: calc(14px + var(--safe-top));
-      padding-bottom: calc(156px + var(--safe-bottom));
+      padding-bottom: calc(182px + var(--safe-bottom));
     }
-    @media (min-width: 768px) { .app-scroll-pane { padding-bottom: 110px; } }
+    @media (min-width: 768px) { .app-scroll-pane { padding-bottom: 120px; } }
 
+    /* Clean Fullscreen Player (NO bottom nav bar!) */
     .player-fixed-pane {
       height: 100%; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;
-      padding-top: calc(10px + var(--safe-top));
-      padding-bottom: calc(82px + var(--safe-bottom));
+      padding-top: calc(12px + var(--safe-top));
+      padding-bottom: calc(22px + var(--safe-bottom));
     }
-    @media (min-width: 768px) { .player-fixed-pane { padding-bottom: 24px; } }
 
     .player-cover-frame {
-      width: min(70vw, 34dvh, 300px); height: min(70vw, 34dvh, 300px);
+      width: min(80vw, 41dvh, 340px); height: min(80vw, 41dvh, 340px);
       position: relative;
       transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.8s ease;
     }
-    .player-cover-frame.is-playing { transform: scale(1.02); box-shadow: 0 24px 60px -12px rgba(0,0,0,0.75), 0 0 54px -8px var(--mesh-1); }
+    .player-cover-frame.is-playing { transform: scale(1.02); box-shadow: 0 28px 68px -14px rgba(0,0,0,0.78), 0 0 60px -8px var(--mesh-1); }
     .player-cover-frame.is-paused { transform: scale(0.95); box-shadow: 0 14px 36px -12px rgba(0,0,0,0.65); }
 
     .wave-hero-card { background: linear-gradient(125deg, var(--accent-1) 0%, var(--accent-2) 100%); box-shadow: 0 16px 40px -12px var(--accent-1-soft); }
 
+    /* Interactive Synced Lyrics View */
+    .lyrics-scroll {
+      flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior-y: contain;
+      -webkit-overflow-scrolling: touch;
+      mask-image: linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%);
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%);
+      padding: 28px 6px 48px;
+    }
+    .lyric-line {
+      font-size: 21px; line-height: 1.42; font-weight: 700;
+      color: rgba(255, 255, 255, 0.34);
+      padding: 8px 4px; border-radius: 12px; cursor: pointer;
+      transition: color 0.28s ease, transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.28s ease;
+      transform-origin: left center;
+    }
+    .lyric-line.is-active {
+      color: #ffffff;
+      transform: scale(1.03);
+      text-shadow: 0 0 24px rgba(255, 255, 255, 0.28);
+    }
+    .lyric-line.is-past { color: rgba(255, 255, 255, 0.45); }
+
     /* Magnetic Spring Waveform Scrubber */
-    .waveform-outer { position: relative; padding: 12px 0 6px; touch-action: none; cursor: pointer; }
-    .waveform-wrap { display: flex; align-items: center; justify-content: space-between; gap: 3px; height: 36px; transition: height 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); }
-    .waveform-outer.is-scrubbing .waveform-wrap { height: 46px; }
+    .waveform-outer { position: relative; padding: 14px 0 6px; touch-action: none; cursor: pointer; }
+    .waveform-wrap { display: flex; align-items: center; justify-content: space-between; gap: 3px; height: 38px; transition: height 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .waveform-outer.is-scrubbing .waveform-wrap { height: 48px; }
     .wf-bar {
       flex: 1; border-radius: 99px; background: rgba(255, 255, 255, 0.22);
       transform-origin: center center;
@@ -148,8 +201,29 @@
   </style>
 </head>
 <body>
+  <!-- Infinite-Resolution Vector Splash Screen -->
   <div id="splash-screen" role="button" tabindex="0" aria-label="Elysion">
-    <img src="./splash-16a.jpg" alt="Elysion" class="splash-img" />
+    <div class="splash-mist-1"></div>
+    <div class="splash-mist-2"></div>
+    <div class="splash-content">
+      <svg class="splash-stars" width="124" height="106" viewBox="0 0 124 106" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="starSilver" cx="50%" cy="50%" r="55%">
+            <stop offset="0%" stop-color="#FFFFFF" />
+            <stop offset="68%" stop-color="#E8E4F3" />
+            <stop offset="100%" stop-color="#B8B0CF" />
+          </radialGradient>
+          <radialGradient id="starRose" cx="50%" cy="50%" r="55%">
+            <stop offset="0%" stop-color="#FBCFE8" />
+            <stop offset="60%" stop-color="#E879F9" />
+            <stop offset="100%" stop-color="#9333EA" />
+          </radialGradient>
+        </defs>
+        <path d="M46 4 C47.5 34 54 41.5 84 43 C54 44.5 47.5 52 46 82 C44.5 52 38 44.5 8 43 C38 41.5 44.5 34 46 4 Z" fill="url(#starSilver)" />
+        <path d="M88 34 C89.2 54 93.8 59.2 114 60.5 C93.8 61.8 89.2 67 88 87 C86.8 67 82.2 61.8 62 60.5 C82.2 59.2 86.8 54 88 34 Z" fill="url(#starRose)" />
+      </svg>
+      <div class="splash-wordmark">ELYSION</div>
+    </div>
   </div>
 
   <div id="mesh-bg" class="mesh-bg" aria-hidden="true">
@@ -163,6 +237,7 @@
   <div id="toast-container" class="fixed top-4 right-4 left-4 sm:left-auto sm:w-80 z-50 flex flex-col gap-2 pointer-events-none" style="padding-top: var(--safe-top);"></div>
 
   <div class="relative z-10 h-full flex flex-col md:flex-row max-w-5xl mx-auto">
+    <!-- Desktop Sidebar -->
     <aside class="hidden md:flex md:flex-col md:w-64 shrink-0 p-4 h-full">
       <div class="glass rounded-3xl p-5 flex flex-col h-full">
         <div class="flex items-center gap-3 mb-7">
@@ -241,7 +316,7 @@
 
         <div class="space-y-3">
           <div class="flex items-center justify-between gap-2">
-            <h2 id="library-section-title" class="text-sm font-bold tracking-tight text-white/90">Треки</h2>
+            <h2 class="text-sm font-bold tracking-tight text-white/90">Треки</h2>
             <span id="library-count-label" class="text-xs text-white/45"></span>
           </div>
           <div id="library-filter-chips" class="flex gap-1.5 overflow-x-auto no-scrollbar pb-0.5"></div>
@@ -249,10 +324,11 @@
         </div>
       </section>
 
-      <!-- VIEW 2: ПЛЕЕР (100% Fixed Zero-Scroll) -->
+      <!-- VIEW 2: ЧИСТЫЙ ПОЛНОЭКРАННЫЙ ПЛЕЕР (Без bottom-bar и лишних кнопок) -->
       <section id="view-player" class="app-view player-fixed-pane hidden max-w-md mx-auto">
+        <!-- Header -->
         <div class="w-full flex items-center justify-between shrink-0">
-          <button id="player-back-btn" aria-label="Назад" class="p-2 rounded-xl text-white/70 hover:text-white transition"><i data-lucide="chevron-down" class="w-5 h-5"></i></button>
+          <button id="player-back-btn" aria-label="Свернуть плеер" class="p-2 rounded-xl text-white/75 hover:text-white transition"><i data-lucide="chevron-down" class="w-6 h-6"></i></button>
           <div class="text-center">
             <div class="font-brand text-xs sm:text-sm font-medium text-white/90">ELYSION</div>
             <button id="player-jam-pill" class="mt-0.5 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/10 border border-white/10 text-[10px] font-medium text-white/80">
@@ -260,24 +336,35 @@
               <span id="player-conn-text">Connected</span>
             </button>
           </div>
-          <div class="flex items-center gap-0.5 px-2 py-1">
-            <i data-lucide="heart" class="w-4 h-4 fill-current" style="color: var(--heart-he);"></i>
-            <i data-lucide="heart" class="w-4 h-4 fill-current -ml-1" style="color: var(--heart-she);"></i>
-          </div>
+          <button id="open-cover-picker-btn" aria-label="Сменить обложку" title="Сменить обложку" class="p-2 rounded-xl text-white/70 hover:text-white transition"><i data-lucide="image" class="w-5 h-5"></i></button>
         </div>
 
-        <div class="flex-1 flex items-center justify-center min-h-0 py-2">
-          <div id="player-cover-frame" class="player-cover-frame is-paused rounded-[28px] overflow-hidden border border-white/15">
+        <!-- Center Stage: Cover Art OR Interactive Synced Lyrics -->
+        <div id="player-cover-stage" class="flex-1 flex items-center justify-center min-h-0 py-3">
+          <div id="player-cover-frame" class="player-cover-frame is-paused rounded-[30px] overflow-hidden border border-white/15">
             <img id="player-cover-img" src="" alt="Обложка" class="w-full h-full object-cover" />
-            <div id="player-speed-badge" class="hidden absolute top-3 right-3 px-2.5 py-1 rounded-full bg-black/55 backdrop-blur-md text-[10px] font-bold tracking-wide text-white border border-white/15">SLOWED 0.82×</div>
+            <div id="player-speed-badge" class="hidden absolute top-3 right-3 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-[10px] font-bold tracking-wide text-white border border-white/15">0.82×</div>
           </div>
         </div>
 
-        <div class="w-full shrink-0 space-y-3.5">
-          <div class="text-center px-2">
-            <h2 id="player-title" class="text-lg sm:text-xl font-extrabold tracking-tight truncate">—</h2>
-            <p id="player-artist" class="text-xs sm:text-sm text-white/65 truncate mt-0.5">—</p>
-            <p id="player-added-by" class="text-[10px] text-white/40 mt-0.5">—</p>
+        <div id="player-lyrics-stage" class="hidden flex-1 flex flex-col min-h-0 py-2">
+          <div class="flex items-center gap-3 px-1 pb-2 shrink-0 border-b border-white/10">
+            <img id="lyrics-mini-cover" src="" alt="" class="w-10 h-10 rounded-xl object-cover shrink-0" />
+            <div class="min-w-0 flex-1">
+              <div id="lyrics-mini-title" class="text-sm font-bold truncate">—</div>
+              <div id="lyrics-mini-artist" class="text-xs text-white/60 truncate">—</div>
+            </div>
+            <button id="close-lyrics-btn" aria-label="Закрыть текст" class="p-2 rounded-xl bg-white/10 text-white/80"><i data-lucide="x" class="w-4 h-4"></i></button>
+          </div>
+          <div id="lyrics-container" class="lyrics-scroll no-scrollbar"></div>
+        </div>
+
+        <!-- Bottom Controls Block -->
+        <div class="w-full shrink-0 space-y-4">
+          <div id="player-title-block" class="text-center px-2">
+            <h2 id="player-title" class="text-xl sm:text-2xl font-extrabold tracking-tight truncate">—</h2>
+            <p id="player-artist" class="text-sm text-white/65 truncate mt-0.5">—</p>
+            <p id="player-added-by" class="text-[11px] text-white/40 mt-0.5">—</p>
           </div>
 
           <div class="px-1">
@@ -291,24 +378,22 @@
             </div>
           </div>
 
-          <div class="flex items-center justify-center gap-2.5">
-            <button id="pill-slowed" data-speed-toggle="0.82" class="px-4 py-1.5 rounded-full text-xs font-semibold border transition">Slowed 0.82×</button>
-            <button id="pill-speedup" data-speed-toggle="1.22" class="px-4 py-1.5 rounded-full text-xs font-semibold border transition">Speed Up 1.22×</button>
+          <div class="flex items-center justify-center gap-9 py-1">
+            <button id="player-prev-btn" aria-label="Предыдущий" class="p-2 text-white/85 hover:text-white active:scale-90 transition"><i data-lucide="skip-back" class="w-7 h-7 fill-current"></i></button>
+            <button id="player-play-btn" aria-label="Играть или пауза" class="w-16 h-16 rounded-full bg-white text-slate-950 flex items-center justify-center shadow-2xl active:scale-95 transition"><i id="player-play-icon" data-lucide="play" class="w-7 h-7 fill-current ml-0.5"></i></button>
+            <button id="player-next-btn" aria-label="Следующий" class="p-2 text-white/85 hover:text-white active:scale-90 transition"><i data-lucide="skip-forward" class="w-7 h-7 fill-current"></i></button>
           </div>
 
-          <div class="flex items-center justify-center gap-8">
-            <button id="player-prev-btn" aria-label="Предыдущий" class="p-2 text-white/85 hover:text-white active:scale-90 transition"><i data-lucide="skip-back" class="w-6 h-6 fill-current"></i></button>
-            <button id="player-play-btn" aria-label="Играть или пауза" class="w-14 h-14 rounded-full bg-white text-slate-950 flex items-center justify-center shadow-xl active:scale-95 transition"><i id="player-play-icon" data-lucide="play" class="w-6 h-6 fill-current ml-0.5"></i></button>
-            <button id="player-next-btn" aria-label="Следующий" class="p-2 text-white/85 hover:text-white active:scale-90 transition"><i data-lucide="skip-forward" class="w-6 h-6 fill-current"></i></button>
-          </div>
-
-          <div class="flex items-center justify-between px-2 pt-0.5">
-            <button id="player-shuffle-btn" aria-label="Перемешать" class="p-2 rounded-xl text-white/55 hover:text-white transition"><i data-lucide="shuffle" class="w-4 h-4"></i></button>
-            <button id="player-dual-heart-btn" aria-label="Лайк" class="flex items-center gap-1.5 px-4 py-1.5 rounded-full glass-soft border border-white/15 active:scale-95 transition">
+          <!-- Clean 5-Function Dock: Тт (Lyrics) | Shuffle | Dual Heart | Sound/Speed | Queue -->
+          <div class="flex items-center justify-between px-2 pt-1">
+            <button id="player-lyrics-btn" aria-label="Текст песни" class="w-10 h-10 rounded-xl flex items-center justify-center text-white/65 hover:text-white font-bold text-sm transition">Тт</button>
+            <button id="player-shuffle-btn" aria-label="Перемешать" class="w-10 h-10 rounded-xl flex items-center justify-center text-white/60 hover:text-white transition"><i data-lucide="shuffle" class="w-4 h-4"></i></button>
+            <button id="player-dual-heart-btn" aria-label="Лайк" class="flex items-center gap-1.5 px-4 py-2 rounded-full glass-soft border border-white/15 active:scale-95 transition">
               <i id="dock-heart-he" data-lucide="heart" class="w-4 h-4 transition"></i>
               <i id="dock-heart-she" data-lucide="heart" class="w-4 h-4 transition"></i>
             </button>
-            <button id="player-fx-toggle" aria-label="Настройки скорости" class="p-2 rounded-xl text-white/55 hover:text-white transition"><i data-lucide="sliders-horizontal" class="w-4 h-4"></i></button>
+            <button id="player-fx-toggle" aria-label="Звук и скорость" class="w-10 h-10 rounded-xl flex items-center justify-center text-white/60 hover:text-white transition"><i data-lucide="sliders-horizontal" class="w-4 h-4"></i></button>
+            <button id="player-queue-btn" aria-label="Очередь" class="w-10 h-10 rounded-xl flex items-center justify-center text-white/60 hover:text-white transition"><i data-lucide="list-music" class="w-4 h-4"></i></button>
           </div>
         </div>
       </section>
@@ -379,11 +464,10 @@
         </div>
         <div class="glass-soft rounded-3xl p-5 space-y-3">
           <div class="text-sm font-bold">Акцентная палитра</div>
-          <div class="text-xs text-white/55">В Плеере фон всегда адаптируется под обложку трека (VK X).</div>
+          <div class="text-xs text-white/55">В плеере фон всегда адаптируется под обложку трека.</div>
           <div id="palette-switcher" class="grid grid-cols-2 sm:grid-cols-4 gap-2"></div>
-          <div class="pt-2 flex flex-wrap items-center justify-between gap-2 border-t border-white/10">
-            <button id="upgrade-covers-btn" class="px-3 py-1.5 rounded-xl bg-white/10 text-xs font-semibold">Обновить HD-обложки</button>
-            <button id="replay-splash-btn" class="px-3 py-1.5 rounded-xl bg-white/10 text-xs font-semibold">Заставка 16A</button>
+          <div class="pt-2 flex flex-wrap items-center gap-2 border-t border-white/10">
+            <button id="upgrade-covers-btn" class="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-semibold">Обновить точные HD-обложки</button>
           </div>
         </div>
         <div class="space-y-3">
@@ -394,7 +478,7 @@
     </main>
   </div>
 
-  <!-- Floating Mini-Player -->
+  <!-- Floating Mini-Player (Hidden on Player view) -->
   <div id="mini-player-wrap" class="fixed left-3 right-3 md:left-72 md:right-6 z-40 max-w-2xl md:mx-auto" style="bottom: calc(78px + var(--safe-bottom));">
     <div class="glass-dock rounded-2xl p-2.5 sm:px-3.5 flex items-center gap-3">
       <button id="mini-open-player" class="flex items-center gap-3 min-w-0 flex-1 text-left">
@@ -418,8 +502,8 @@
     </div>
   </div>
 
-  <!-- Floating Bottom Pill Nav -->
-  <nav class="md:hidden fixed left-4 right-4 z-40" style="bottom: calc(12px + var(--safe-bottom));">
+  <!-- Floating Bottom Pill Nav (Hidden on Player view!) -->
+  <nav id="mobile-bottom-nav" class="md:hidden fixed left-4 right-4 z-40" style="bottom: calc(12px + var(--safe-bottom));">
     <div class="glass-dock rounded-full px-2 py-1.5 grid grid-cols-4 gap-1 max-w-sm mx-auto">
       <button data-nav="library" class="nav-btn-mob flex flex-col items-center gap-0.5 py-1.5 rounded-full text-[10px] font-semibold transition"><i data-lucide="library" class="w-4 h-4"></i><span>Библиотека</span></button>
       <button data-nav="player" class="nav-btn-mob flex flex-col items-center gap-0.5 py-1.5 rounded-full text-[10px] font-semibold transition"><i data-lucide="disc-3" class="w-4 h-4"></i><span>Плеер</span></button>
@@ -428,19 +512,21 @@
     </div>
   </nav>
 
-  <!-- MODAL: FX Speed/Pitch -->
+  <!-- MODAL: Звук и скорость -->
   <div id="fx-modal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-4">
     <div class="glass rounded-3xl p-5 w-full max-w-sm space-y-4">
       <div class="flex items-center justify-between">
-        <h3 class="text-base font-extrabold">Lane Sound · Скорость и тон</h3>
+        <h3 class="text-base font-extrabold">Звук и скорость</h3>
         <button id="close-fx-modal" aria-label="Закрыть" class="p-1.5 rounded-xl hover:bg-white/10"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div class="grid grid-cols-3 gap-2">
+        <button data-speed-preset="0.82" class="speed-preset-btn py-2 rounded-xl text-xs font-semibold border transition">Slowed 0.82×</button>
+        <button data-speed-preset="1.0" class="speed-preset-btn py-2 rounded-xl text-xs font-semibold border transition">1.0× Обычный</button>
+        <button data-speed-preset="1.22" class="speed-preset-btn py-2 rounded-xl text-xs font-semibold border transition">Speed Up 1.22×</button>
       </div>
       <div class="flex items-center justify-between text-xs">
         <span class="text-white/75">Точная скорость</span>
-        <div class="flex items-center gap-2">
-          <span id="speed-readout" class="font-bold tabular-nums" style="color: var(--accent-2);">1.00×</span>
-          <button id="speed-reset-btn" class="px-2.5 py-1 rounded-lg bg-white/10 text-[11px] font-semibold">Сброс 1.0×</button>
-        </div>
+        <span id="speed-readout" class="font-bold tabular-nums" style="color: var(--accent-2);">1.00×</span>
       </div>
       <div class="flex items-center gap-3">
         <span class="text-[11px] text-white/45">0.70×</span>
@@ -454,14 +540,36 @@
     </div>
   </div>
 
-  <!-- MODAL: Upload -->
+  <!-- MODAL: Выбор точной обложки -->
+  <div id="cover-modal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-4">
+    <div class="glass rounded-3xl p-5 w-full max-w-sm space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-extrabold">Выбрать обложку</h3>
+        <button id="close-cover-modal" aria-label="Закрыть" class="p-1.5 rounded-xl hover:bg-white/10"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div id="cover-candidates" class="grid grid-cols-3 gap-2.5"></div>
+    </div>
+  </div>
+
+  <!-- MODAL: Очередь воспроизведения -->
+  <div id="queue-modal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-4">
+    <div class="glass rounded-3xl p-5 w-full max-w-md max-h-[70dvh] flex flex-col space-y-3">
+      <div class="flex items-center justify-between shrink-0">
+        <h3 class="text-base font-extrabold">Очередь треков</h3>
+        <button id="close-queue-modal" aria-label="Закрыть" class="p-1.5 rounded-xl hover:bg-white/10"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div id="queue-list" class="overflow-y-auto no-scrollbar space-y-1.5 flex-1"></div>
+    </div>
+  </div>
+
+  <!-- MODAL: Upload Local -->
   <div id="upload-modal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="glass rounded-3xl p-6 w-full max-w-md space-y-4">
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-extrabold">Добавить локальный трек</h3>
         <button id="close-upload-modal" aria-label="Закрыть" class="p-1.5 rounded-xl hover:bg-white/10"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
-      <p class="text-xs text-white/60">Для постоянной синхронизации между iPhone 16 и OnePlus 15 просто кидай MP3 своему Telegram-боту (здесь — быстрая локальная проверка).</p>
+      <p class="text-xs text-white/60">Для постоянной синхронизации между iPhone 16 и OnePlus 15 просто кидай MP3 своему Telegram-боту.</p>
       <form id="upload-form" class="space-y-3">
         <input id="upload-file-input" type="file" accept="audio/*" required class="w-full text-xs text-white/80 file:mr-3 file:py-2 file:px-3.5 file:rounded-xl file:border-0 file:bg-white/15 file:text-white file:font-semibold" />
         <div class="grid grid-cols-2 gap-2.5">
@@ -527,18 +635,16 @@
     const state = {
       activeView: 'library', activeProfile: 'he', paletteId: 'violet_rose', waveMood: 'all',
       libraryFilter: 'all', librarySearch: '', tracks: [],
-      playlists: [
-        { id: 'builtin-matches', name: 'Наши совпадения', desc: 'Лайкнули оба', filter: 'matches', cover: COVERS.rain },
-        { id: 'builtin-all', name: 'Вся коллекция', desc: 'Все ваши треки', filter: 'all', cover: COVERS.chrome }
-      ],
-      playlistTrackMap: {}, currentTrackId: null, currentMesh: ['#9333ea', '#ec4899', '#4f46e5'],
+      playlists: [], playlistTrackMap: {}, currentTrackId: null, currentMesh: ['#9333ea', '#ec4899', '#4f46e5'],
       isPlaying: false, progressPct: 0, isScrubbing: false, scrubRatio: 0, shuffle: false,
-      playbackRate: 1.0, pitchShiftMode: true, totalPlays: 0, usedSlowedOrSpeed: false,
-      jamActive: false, jamPartnerOnline: false, jamUsed: false, jamLogs: ['Комната ELYSION-26 готова.'], unlockedBadges: {}
+      playbackRate: 1.0, pitchShiftMode: true, lyricsOpen: false,
+      lyricsCache: {}, currentLyrics: null, lastActiveLyricIdx: -1,
+      totalPlays: 0, usedSlowedOrSpeed: false, jamActive: false, jamPartnerOnline: false, jamUsed: false,
+      jamLogs: ['Комната ELYSION-26 готова.'], unlockedBadges: {}
     };
 
     try {
-      const s = JSON.parse(localStorage.getItem('elysion_v11_state') || 'null');
+      const s = JSON.parse(localStorage.getItem('elysion_v12_state') || localStorage.getItem('elysion_v11_state') || 'null');
       if (s) {
         if (s.activeProfile) state.activeProfile = s.activeProfile;
         if (s.paletteId) state.paletteId = s.paletteId;
@@ -550,20 +656,17 @@
 
     function persistState() {
       try {
-        localStorage.setItem('elysion_v11_state', JSON.stringify({
+        localStorage.setItem('elysion_v12_state', JSON.stringify({
           activeProfile: state.activeProfile, paletteId: state.paletteId,
           totalPlays: state.totalPlays, usedSlowedOrSpeed: state.usedSlowedOrSpeed, jamUsed: state.jamUsed
         }));
       } catch (e) {}
     }
 
-    // SPLASH 16A
+    // VECTOR SPLASH SCREEN
     const splashEl = document.getElementById('splash-screen');
-    let splashTimer = null;
-    function hideSplash() { if (splashTimer) clearTimeout(splashTimer); splashEl.classList.add('splash-hidden'); }
-    function showSplash(ms = 1400) { splashEl.classList.remove('splash-hidden'); if (splashTimer) clearTimeout(splashTimer); splashTimer = setTimeout(hideSplash, ms); }
-    splashEl.addEventListener('click', hideSplash);
-    showSplash(1400);
+    let splashTimer = setTimeout(() => splashEl.classList.add('splash-hidden'), 1350);
+    splashEl.addEventListener('click', () => { clearTimeout(splashTimer); splashEl.classList.add('splash-hidden'); });
 
     // SMART BACK GESTURE PROTECTION
     let lastBackAttempt = 0;
@@ -571,14 +674,16 @@
     function navigateTo(view, recordHistory = true) {
       if (state.activeView === view) return;
       state.activeView = view;
+      if (view !== 'player') state.lyricsOpen = false;
       if (recordHistory) pushNavState(view);
       renderAll();
     }
     function closeAnyModal() {
-      for (const id of ['fx-modal', 'upload-modal', 'playlist-modal']) {
+      for (const id of ['fx-modal', 'cover-modal', 'queue-modal', 'upload-modal', 'playlist-modal']) {
         const el = document.getElementById(id);
         if (el && !el.classList.contains('hidden')) { el.classList.add('hidden'); return true; }
       }
+      if (state.lyricsOpen) { state.lyricsOpen = false; renderPlayerView(); return true; }
       return false;
     }
     function handleSystemBack(isNative = false) {
@@ -603,43 +708,195 @@
     window.addEventListener('popstate', () => handleSystemBack(false));
     if (window.Capacitor?.Plugins?.App?.addListener) window.Capacitor.Plugins.App.addListener('backButton', () => handleSystemBack(true));
 
-    // HD 600x600 COVER ART ENGINE
+    // =========================================================================
+    // STRICT ACCURATE HD COVER MATCHER (iTunes RU + Strict Artist/Title Scoring)
+    // =========================================================================
+    function normStr(s) {
+      return String(s || '').toLowerCase().replace(/\(.*?\)|\[.*?\]/g, '').replace(/[^a-zа-яё0-9\s]/gi, ' ').replace(/\s+/g, ' ').trim();
+    }
+    function scoreMatch(item, targetArtist, targetTitle) {
+      const itTitle = normStr(item.trackName);
+      const itArtist = normStr(item.artistName);
+      const tTitle = normStr(targetTitle);
+      const tArtists = String(targetArtist || '').split(/[,&]|feat\.?|ft\.?/i).map(normStr).filter(Boolean);
+      let score = 0;
+      if (itTitle === tTitle) score += 60;
+      else if (itTitle.includes(tTitle) || tTitle.includes(itTitle)) score += 35;
+      else {
+        const words = tTitle.split(' ').filter(w => w.length > 2);
+        const hits = words.filter(w => itTitle.includes(w)).length;
+        if (words.length && hits / words.length >= 0.6) score += 25;
+      }
+      const artistHit = tArtists.some(a => a.length > 1 && (itArtist.includes(a) || a.includes(itArtist)));
+      if (artistHit) score += 45;
+      return score;
+    }
+
+    async function searchCoverCandidates(artist, title) {
+      const cleanA = String(artist || '').replace(/Elysion Library|Личный трек/gi, '').trim();
+      const cleanT = String(title || '').replace(/\(.*?\)|\[.*?\]/g, '').trim();
+      const q = encodeURIComponent(`${cleanA} ${cleanT}`.trim());
+      if (!q) return [];
+      const results = [];
+      for (const country of ['ru', 'us']) {
+        try {
+          const r = await fetch(`https://itunes.apple.com/search?term=${q}&country=${country}&entity=song&limit=8`);
+          if (r.ok) {
+            const data = await r.json();
+            (data.results || []).forEach(it => {
+              if (it.artworkUrl100) {
+                results.push({
+                  url: it.artworkUrl100.replace('100x100bb', '600x600bb'),
+                  label: `${it.artistName} — ${it.trackName}`,
+                  score: scoreMatch(it, cleanA, cleanT)
+                });
+              }
+            });
+          }
+        } catch (e) {}
+        if (results.some(x => x.score >= 80)) break;
+      }
+      const seen = new Set();
+      return results.sort((a, b) => b.score - a.score).filter(x => !seen.has(x.url) && seen.add(x.url));
+    }
+
     const coverQueueRunning = new Set();
     function needsHdCover(track) {
       if (!track || !track.isCloud) return false;
       const c = track.cover || '';
       return !c || c.startsWith('data:') || c.includes('/cover/');
     }
-    async function fetchHdCoverForTrack(track) {
-      if (!track || coverQueueRunning.has(track.id)) return;
+
+    async function fetchStrictHdCover(track, force = false) {
+      if (!track || (!force && coverQueueRunning.has(track.id))) return;
       coverQueueRunning.add(track.id);
       try {
-        const cleanArtist = (track.artist || '').replace(/Elysion Library|Личный трек/gi, '').split(',')[0].trim();
-        const cleanTitle = (track.title || '').replace(/\(.*?\)|\[.*?\]/g, '').trim();
-        const q = encodeURIComponent(`${cleanArtist} ${cleanTitle}`.trim());
-        if (!q) return;
-        const res = await fetch(`https://itunes.apple.com/search?term=${q}&entity=song&limit=1`);
-        if (!res.ok) return;
-        const art = (await res.json())?.results?.[0]?.artworkUrl100;
-        if (!art) return;
-        const hdUrl = art.replace('100x100bb', '600x600bb');
-        track.cover = hdUrl;
-        if (sb && track.isCloud) sb.from('tracks').update({ cover_url: hdUrl }).eq('id', track.id).then(() => {});
+        const cands = await searchCoverCandidates(track.artist, track.title);
+        // Require high confidence (>= 70) so we NEVER put wrong album art like on Амнезия!
+        const best = cands.find(c => c.score >= 70);
+        if (!best) return;
+        track.cover = best.url;
+        if (sb && track.isCloud) sb.from('tracks').update({ cover_url: best.url }).eq('id', track.id).then(() => {});
         if (track.id === state.currentTrackId) { syncCoverMesh(track); updateMediaSession(track); }
         renderAll();
       } catch (e) {}
     }
-    async function upgradeAllMissingCovers(showFeedback = false) {
-      const targets = state.tracks.filter(needsHdCover).slice(0, 30);
-      if (showFeedback) showToast(`Ищу HD-обложки для ${targets.length} треков...`);
-      for (const tr of targets) {
-        await fetchHdCoverForTrack(tr);
-        await new Promise(r => setTimeout(r, 200));
+
+    async function upgradeAllCoversStrict(forceAll = false) {
+      const targets = forceAll ? state.tracks.filter(t => t.isCloud) : state.tracks.filter(needsHdCover);
+      showToast(`Подбираю точные HD-обложки (${targets.length})...`);
+      for (const tr of targets.slice(0, 40)) {
+        await fetchStrictHdCover(tr, forceAll);
+        await new Promise(r => setTimeout(r, 180));
       }
-      if (showFeedback) showToast('HD-обложки обновлены!');
+      showToast('Точные HD-обложки обновлены!');
     }
 
-    // VK X ADAPTIVE MESH
+    async function openCoverPicker() {
+      const track = getCurrentTrack();
+      if (!track) return;
+      const modal = document.getElementById('cover-modal');
+      const grid = document.getElementById('cover-candidates');
+      modal.classList.remove('hidden');
+      pushNavState('cover');
+      grid.innerHTML = '<div class="col-span-3 py-8 text-center text-xs text-white/60">Ищу варианты обложек...</div>';
+      const cands = await searchCoverCandidates(track.artist, track.title);
+      if (!cands.length) {
+        grid.innerHTML = '<div class="col-span-3 py-8 text-center text-xs text-white/60">Вариантов не найдено.</div>';
+        return;
+      }
+      grid.innerHTML = cands.slice(0, 6).map((c, idx) => `
+        <button data-pick-cover="${escapeHtml(c.url)}" class="group relative aspect-square rounded-2xl overflow-hidden border border-white/15 hover:border-white transition">
+          <img src="${c.url}" alt="" class="w-full h-full object-cover" />
+          ${idx === 0 && c.score >= 70 ? '<span class="absolute bottom-1 left-1 right-1 bg-black/70 text-[9px] font-bold py-0.5 rounded-md text-emerald-300">Точное</span>' : ''}
+        </button>
+      `).join('');
+    }
+
+    // =========================================================================
+    // INTERACTIVE SYNCED LYRICS (LRCLIB API — Free, Keyless, Russian + Global)
+    // =========================================================================
+    function parseLrc(lrcText) {
+      const lines = [];
+      const re = /\[(\d+):(\d+(?:\.\d+)?)\]\s*(.*)/;
+      String(lrcText || '').split('\n').forEach(raw => {
+        const m = raw.match(re);
+        if (m) {
+          const sec = parseInt(m[1], 10) * 60 + parseFloat(m[2]);
+          const txt = m[3].trim();
+          if (txt) lines.push({ time: sec, text: txt });
+        }
+      });
+      return lines.sort((a, b) => a.time - b.time);
+    }
+
+    async function loadLyricsForTrack(track) {
+      if (!track) return;
+      const box = document.getElementById('lyrics-container');
+      if (state.lyricsCache[track.id]) {
+        state.currentLyrics = state.lyricsCache[track.id];
+        renderLyricsList();
+        return;
+      }
+      box.innerHTML = '<div class="py-12 text-center text-sm text-white/55">Ищу синхронизированный текст...</div>';
+      try {
+        const a = encodeURIComponent(String(track.artist || '').split(',')[0].trim());
+        const t = encodeURIComponent(String(track.title || '').replace(/\(.*?\)|\[.*?\]/g, '').trim());
+        let res = await fetch(`https://lrclib.net/api/search?artist_name=${a}&track_name=${t}`);
+        let arr = res.ok ? await res.json() : [];
+        if (!arr || !arr.length) {
+          res = await fetch(`https://lrclib.net/api/search?q=${a}%20${t}`);
+          arr = res.ok ? await res.json() : [];
+        }
+        const best = (arr || []).find(x => x.syncedLyrics) || (arr || []).find(x => x.plainLyrics);
+        let parsed = { synced: [], plain: '' };
+        if (best?.syncedLyrics) parsed.synced = parseLrc(best.syncedLyrics);
+        else if (best?.plainLyrics) parsed.plain = best.plainLyrics;
+        state.lyricsCache[track.id] = parsed;
+        state.currentLyrics = parsed;
+      } catch (e) {
+        state.currentLyrics = { synced: [], plain: '' };
+      }
+      renderLyricsList();
+    }
+
+    function renderLyricsList() {
+      const box = document.getElementById('lyrics-container');
+      const lyr = state.currentLyrics;
+      state.lastActiveLyricIdx = -1;
+      if (!lyr || (!lyr.synced.length && !lyr.plain)) {
+        box.innerHTML = '<div class="py-14 text-center text-sm text-white/50">Синхронизированный текст для этого трека пока не найден.</div>';
+        return;
+      }
+      if (lyr.synced.length) {
+        box.innerHTML = lyr.synced.map((line, i) => `<div class="lyric-line" data-lyric-time="${line.time}" data-lyric-idx="${i}">${escapeHtml(line.text)}</div>`).join('');
+        syncActiveLyricLine(audioEl.currentTime || 0, true);
+      } else {
+        box.innerHTML = lyr.plain.split('\n').map(l => `<div class="text-lg font-semibold text-white/75 py-1.5">${escapeHtml(l)}</div>`).join('');
+      }
+    }
+
+    function syncActiveLyricLine(curSec, instant = false) {
+      if (!state.lyricsOpen || !state.currentLyrics?.synced?.length) return;
+      const lines = state.currentLyrics.synced;
+      let idx = -1;
+      for (let i = 0; i < lines.length; i++) {
+        if (curSec + 0.15 >= lines[i].time) idx = i;
+        else break;
+      }
+      if (idx === state.lastActiveLyricIdx && !instant) return;
+      state.lastActiveLyricIdx = idx;
+      const nodes = document.querySelectorAll('#lyrics-container .lyric-line');
+      nodes.forEach((n, i) => {
+        n.classList.toggle('is-active', i === idx);
+        n.classList.toggle('is-past', i < idx);
+      });
+      if (idx >= 0 && nodes[idx]) {
+        nodes[idx].scrollIntoView({ behavior: instant ? 'auto' : 'smooth', block: 'center' });
+      }
+    }
+
+    // ADAPTIVE MESH
     function extractMeshFromImage(imgSrc, fallback) {
       return new Promise((resolve) => {
         const img = new Image();
@@ -683,8 +940,10 @@
       applyThemeAndBackground();
     }
 
-    // AUDIO ENGINE + NATIVE ANDROID MEDIA SESSION
+    // AUDIO ENGINE + NATIVE MEDIA SESSION (WITH LIVE ALERTS SEEK SUPPORT!)
     const audioEl = document.getElementById('audio-engine');
+    let lastNativeSyncTs = 0;
+
     function getCurrentTrack() { return state.tracks.find(t => t.id === state.currentTrackId) || state.tracks[0] || null; }
     function applyAudioSpeed() {
       audioEl.playbackRate = state.playbackRate;
@@ -693,9 +952,12 @@
       if ('mozPreservesPitch' in audioEl) audioEl.mozPreservesPitch = preserve;
       if ('webkitPreservesPitch' in audioEl) audioEl.webkitPreservesPitch = preserve;
     }
-    function syncNativeAndroidMedia(track) {
+    function syncNativeAndroidMedia(track, force = false) {
       const plugin = window.Capacitor?.Plugins?.ElysionMedia;
       if (!plugin || !track) return;
+      const now = Date.now();
+      if (!force && now - lastNativeSyncTs < 2000) return;
+      lastNativeSyncTs = now;
       try {
         plugin.updateState({
           title: track.title || 'Elysion', artist: track.artist || 'Elysion',
@@ -713,11 +975,18 @@
         else if (a === 'pause') pauseTrack();
         else if (a === 'next') nextTrack();
         else if (a === 'prev') prevTrack();
+        else if (a === 'seek' && typeof evt.position === 'number') {
+          const sec = Math.max(0, evt.position / 1000);
+          if (isFinite(audioEl.duration) && audioEl.duration > 0) {
+            audioEl.currentTime = Math.min(audioEl.duration, sec);
+            syncNativeAndroidMedia(getCurrentTrack(), true);
+          }
+        }
       });
     }
     function updateMediaSession(track) {
       if (!track) return;
-      syncNativeAndroidMedia(track);
+      syncNativeAndroidMedia(track, true);
       if (!('mediaSession' in navigator)) return;
       try {
         navigator.mediaSession.metadata = new MediaMetadata({
@@ -729,7 +998,12 @@
         navigator.mediaSession.setActionHandler('pause', () => pauseTrack());
         navigator.mediaSession.setActionHandler('previoustrack', () => prevTrack());
         navigator.mediaSession.setActionHandler('nexttrack', () => nextTrack());
-        navigator.mediaSession.setActionHandler('seekto', (d) => { if (d && typeof d.seekTime === 'number') audioEl.currentTime = d.seekTime; });
+        navigator.mediaSession.setActionHandler('seekto', (d) => {
+          if (d && typeof d.seekTime === 'number') {
+            audioEl.currentTime = d.seekTime;
+            syncNativeAndroidMedia(track, true);
+          }
+        });
       } catch (e) {}
     }
     function playTrack(trackId, restart = true) {
@@ -737,11 +1011,12 @@
       if (!track) return;
       const isNew = state.currentTrackId !== track.id;
       state.currentTrackId = track.id;
-      if (needsHdCover(track)) fetchHdCoverForTrack(track);
+      if (needsHdCover(track)) fetchStrictHdCover(track);
       if (isNew || !audioEl.src || audioEl.src !== track.audioUrl) {
         audioEl.src = track.audioUrl;
         if (restart) { audioEl.currentTime = 0; state.progressPct = 0; }
         state.totalPlays += 1;
+        if (state.lyricsOpen) loadLyricsForTrack(track);
       }
       applyAudioSpeed();
       syncCoverMesh(track);
@@ -780,7 +1055,7 @@
       playTrack(q[(idx + 1) % q.length].id, true);
     }
     function prevTrack() {
-      if (audioEl.currentTime > 3) { audioEl.currentTime = 0; return; }
+      if (audioEl.currentTime > 3) { audioEl.currentTime = 0; syncNativeAndroidMedia(getCurrentTrack(), true); return; }
       const q = getActiveList().length ? getActiveList() : state.tracks;
       if (!q.length) return;
       const idx = q.findIndex(t => t.id === state.currentTrackId);
@@ -796,6 +1071,8 @@
       document.getElementById('player-time-cur').textContent = formatTime(cur);
       document.getElementById('player-time-dur').textContent = formatTime(dur);
       updateWaveformVisuals();
+      syncActiveLyricLine(cur);
+      if (state.isPlaying) syncNativeAndroidMedia(track, false);
       if ('mediaSession' in navigator && typeof navigator.mediaSession.setPositionState === 'function' && isFinite(audioEl.duration) && audioEl.duration > 0) {
         try { navigator.mediaSession.setPositionState({ duration: audioEl.duration, playbackRate: audioEl.playbackRate, position: Math.min(audioEl.currentTime, audioEl.duration) }); } catch (e) {}
       }
@@ -840,8 +1117,7 @@
       updateWaveformVisuals(Math.floor(ratio * wfWrap.children.length));
     }
     wfOuter.addEventListener('pointerdown', (e) => {
-      state.isScrubbing = true;
-      wfOuter.classList.add('is-scrubbing');
+      state.isScrubbing = true; wfOuter.classList.add('is-scrubbing');
       if (wfOuter.setPointerCapture) try { wfOuter.setPointerCapture(e.pointerId); } catch (err) {}
       if (navigator.vibrate) try { navigator.vibrate(8); } catch (err) {}
       updateScrubFromClientX(e.clientX);
@@ -849,16 +1125,19 @@
     wfOuter.addEventListener('pointermove', (e) => { if (state.isScrubbing) updateScrubFromClientX(e.clientX); });
     function finishScrub() {
       if (!state.isScrubbing) return;
-      state.isScrubbing = false;
-      wfOuter.classList.remove('is-scrubbing');
+      state.isScrubbing = false; wfOuter.classList.remove('is-scrubbing');
       state.progressPct = state.scrubRatio * 100;
-      if (isFinite(audioEl.duration) && audioEl.duration > 0) audioEl.currentTime = state.scrubRatio * audioEl.duration;
+      if (isFinite(audioEl.duration) && audioEl.duration > 0) {
+        audioEl.currentTime = state.scrubRatio * audioEl.duration;
+        syncNativeAndroidMedia(getCurrentTrack(), true);
+        syncActiveLyricLine(audioEl.currentTime, true);
+      }
       updateWaveformVisuals(-1);
     }
     wfOuter.addEventListener('pointerup', finishScrub);
     wfOuter.addEventListener('pointercancel', finishScrub);
 
-    // CLOUD DATA LOAD & REALTIME LIVE JAM
+    // CLOUD DATA LOAD & REALTIME JAM
     function mapDbTrack(row) {
       const audioUrl = row.provider === 'telegram' ? `${WORKER_URL}/stream/${encodeURIComponent(row.source_ref)}` : row.source_ref;
       const fb = row.mood === 'drive' ? COVERS.chrome : row.mood === 'evening' ? COVERS.vinyl : COVERS.rain;
@@ -901,7 +1180,6 @@
         checkBadges(true);
         renderAll();
         if (!silent) showToast(`Обновлено: ${state.tracks.length} треков`);
-        upgradeAllMissingCovers(false);
       } catch (e) { if (!silent) showToast('Нет связи с облаком'); }
     }
 
@@ -965,7 +1243,11 @@
       document.querySelectorAll('.app-view').forEach(el => el.classList.add('hidden'));
       const active = document.getElementById(`view-${state.activeView}`);
       if (active) active.classList.remove('hidden');
-      document.getElementById('mini-player-wrap').classList.toggle('hidden', state.activeView === 'player' || !getCurrentTrack());
+
+      const onPlayer = state.activeView === 'player';
+      document.getElementById('mini-player-wrap').classList.toggle('hidden', onPlayer || !getCurrentTrack());
+      document.getElementById('mobile-bottom-nav').classList.toggle('hidden', onPlayer);
+
       document.querySelectorAll('.nav-btn').forEach(b => { const on = b.dataset.nav === state.activeView; b.className = `nav-btn flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm font-medium transition text-left ${on ? 'bg-white text-slate-950 font-bold shadow-lg' : 'text-white/70 hover:text-white hover:bg-white/10'}`; });
       document.querySelectorAll('.nav-btn-mob').forEach(b => { const on = b.dataset.nav === state.activeView; b.className = `nav-btn-mob flex flex-col items-center gap-0.5 py-1.5 rounded-full text-[10px] font-semibold transition ${on ? 'text-white bg-white/15' : 'text-white/55'}`; });
       document.querySelectorAll('.profile-switch').forEach(b => { const on = b.dataset.profile === state.activeProfile; b.className = `profile-switch ${b.id.includes('desk') ? 'py-2 rounded-xl' : 'px-2.5 py-1.5 rounded-lg'} text-xs font-semibold transition ${on ? 'bg-white text-slate-950 shadow' : 'text-white/65'}`; });
@@ -1006,25 +1288,42 @@
       const track = getCurrentTrack();
       if (!track) return;
       document.getElementById('player-cover-img').src = track.cover;
+      document.getElementById('lyrics-mini-cover').src = track.cover;
       document.getElementById('player-title').textContent = track.title;
+      document.getElementById('lyrics-mini-title').textContent = track.title;
       document.getElementById('player-artist').textContent = track.artist;
+      document.getElementById('lyrics-mini-artist').textContent = track.artist;
       document.getElementById('player-added-by').textContent = `Добавил(а): ${track.addedBy === 'he' ? 'Ты' : 'Она'}`;
+
+      document.getElementById('player-cover-stage').classList.toggle('hidden', state.lyricsOpen);
+      document.getElementById('player-title-block').classList.toggle('hidden', state.lyricsOpen);
+      document.getElementById('player-lyrics-stage').classList.toggle('hidden', !state.lyricsOpen);
+      document.getElementById('player-lyrics-btn').classList.toggle('bg-white/20', state.lyricsOpen);
+      document.getElementById('player-lyrics-btn').classList.toggle('text-white', state.lyricsOpen);
+
       const frame = document.getElementById('player-cover-frame');
       frame.classList.toggle('is-playing', state.isPlaying); frame.classList.toggle('is-paused', !state.isPlaying);
       document.getElementById('player-conn-text').textContent = state.jamPartnerOnline ? 'Live Jam · 2 онлайн' : state.jamActive ? 'Live Jam · Ждём' : 'Connected';
+
       const sbBadge = document.getElementById('player-speed-badge');
-      if (Math.abs(state.playbackRate - 1.0) > 0.01) { sbBadge.classList.remove('hidden'); sbBadge.textContent = state.playbackRate < 1 ? `SLOWED ${state.playbackRate.toFixed(2)}×` : `SPEED UP ${state.playbackRate.toFixed(2)}×`; } else sbBadge.classList.add('hidden');
-      document.getElementById('pill-slowed').className = `px-4 py-1.5 rounded-full text-xs font-semibold border transition ${state.playbackRate < 0.96 ? 'bg-white text-slate-950 border-white shadow' : 'bg-white/5 text-white/80 border-white/20'}`;
-      document.getElementById('pill-speedup').className = `px-4 py-1.5 rounded-full text-xs font-semibold border transition ${state.playbackRate > 1.04 ? 'bg-white text-slate-950 border-white shadow' : 'bg-white/5 text-white/80 border-white/20'}`;
+      if (Math.abs(state.playbackRate - 1.0) > 0.01) { sbBadge.classList.remove('hidden'); sbBadge.textContent = `${state.playbackRate.toFixed(2)}×`; }
+      else sbBadge.classList.add('hidden');
+
       document.getElementById('player-play-icon').setAttribute('data-lucide', state.isPlaying ? 'pause' : 'play');
       document.getElementById('player-shuffle-btn').classList.toggle('text-white', state.shuffle);
       const hHe = document.getElementById('dock-heart-he'), hShe = document.getElementById('dock-heart-she');
       hHe.setAttribute('class', `w-4 h-4 transition ${track.likes.he ? 'fill-current' : 'opacity-30'}`); hHe.style.color = 'var(--heart-he)';
       hShe.setAttribute('class', `w-4 h-4 transition ${track.likes.she ? 'fill-current' : 'opacity-30'}`); hShe.style.color = 'var(--heart-she)';
+
       document.getElementById('speed-readout').textContent = `${state.playbackRate.toFixed(2)}×`;
       document.getElementById('speed-slider').value = state.playbackRate.toFixed(2);
+      document.querySelectorAll('.speed-preset-btn').forEach(b => {
+        const on = Math.abs(state.playbackRate - parseFloat(b.dataset.speedPreset)) < 0.02;
+        b.className = `speed-preset-btn py-2 rounded-xl text-xs font-semibold border transition ${on ? 'bg-white text-slate-950 border-white' : 'bg-white/5 text-white/75 border-white/15'}`;
+      });
       document.getElementById('pitch-toggle-btn').style.background = state.pitchShiftMode ? 'var(--accent-1)' : 'rgba(255,255,255,0.2)';
       document.getElementById('pitch-toggle-dot').className = `w-4 h-4 rounded-full bg-white shadow transition-transform ${state.pitchShiftMode ? 'translate-x-5' : 'translate-x-0'}`;
+
       if (wfWrap.dataset.trackId !== track.id) {
         wfWrap.dataset.trackId = track.id;
         wfWrap.innerHTML = (track.bars || makeWaveformBars(101)).map(h => `<div class="wf-bar" style="height:${h}%;"></div>`).join('');
@@ -1093,18 +1392,36 @@
       const fBtn = e.target.closest('[data-lib-filter]'); if (fBtn) { state.libraryFilter = fBtn.dataset.libFilter; renderAll(); return; }
       const likeBtn = e.target.closest('[data-track-like]'); if (likeBtn) { e.stopPropagation(); toggleLike(likeBtn.dataset.trackLike); return; }
       const row = e.target.closest('[data-track-play]'); if (row) { const id = row.dataset.trackPlay; if (id === state.currentTrackId) togglePlay(); else playTrack(id, true); return; }
-      const st = e.target.closest('[data-speed-toggle]'); if (st) { const v = parseFloat(st.dataset.speedToggle); setSpeed(Math.abs(state.playbackRate - v) < 0.03 ? 1.0 : v); return; }
+      const qRow = e.target.closest('[data-queue-play]'); if (qRow) { playTrack(qRow.dataset.queuePlay, true); document.getElementById('queue-modal').classList.add('hidden'); return; }
+      const sp = e.target.closest('[data-speed-preset]'); if (sp) { setSpeed(parseFloat(sp.dataset.speedPreset)); return; }
+      const lyrLine = e.target.closest('[data-lyric-time]'); if (lyrLine) {
+        const sec = parseFloat(lyrLine.dataset.lyricTime);
+        if (isFinite(sec)) { audioEl.currentTime = sec; syncNativeAndroidMedia(getCurrentTrack(), true); syncActiveLyricLine(sec, false); }
+        return;
+      }
+      const covPick = e.target.closest('[data-pick-cover]'); if (covPick) {
+        const tr = getCurrentTrack();
+        if (tr) {
+          tr.cover = covPick.dataset.pickCover;
+          if (sb && tr.isCloud) sb.from('tracks').update({ cover_url: tr.cover }).eq('id', tr.id).then(() => {});
+          syncCoverMesh(tr); updateMediaSession(tr); renderAll();
+          showToast('Обложка обновлена');
+        }
+        document.getElementById('cover-modal').classList.add('hidden');
+        return;
+      }
       const rBtn = e.target.closest('[data-jam-react]'); if (rBtn) { const em = rBtn.dataset.jamReact; spawnFloatingReaction(em); addJamLog(`${state.activeProfile === 'he' ? 'Ты' : 'Она'} отправил(а) ${em}`); if (state.jamActive) broadcastJam({ action: 'reaction', emoji: em }); renderJamView(); return; }
       const pBtn = e.target.closest('[data-palette-pick]'); if (pBtn) { state.paletteId = pBtn.dataset.palettePick; persistState(); renderAll(); showToast('Палитра обновлена'); return; }
     });
 
     document.getElementById('sync-cloud-btn').addEventListener('click', () => loadCloudLibrary(false));
-    document.getElementById('upgrade-covers-btn').addEventListener('click', () => upgradeAllMissingCovers(true));
-    document.getElementById('replay-splash-btn').addEventListener('click', () => showSplash(1600));
+    document.getElementById('upgrade-covers-btn').addEventListener('click', () => upgradeAllCoversStrict(true));
     document.getElementById('wave-play-hero').addEventListener('click', togglePlay);
     document.getElementById('mini-open-player').addEventListener('click', () => navigateTo('player'));
     document.getElementById('player-back-btn').addEventListener('click', () => navigateTo('library'));
     document.getElementById('player-jam-pill').addEventListener('click', () => navigateTo('jam'));
+    document.getElementById('open-cover-picker-btn').addEventListener('click', openCoverPicker);
+    document.getElementById('close-cover-modal').addEventListener('click', () => document.getElementById('cover-modal').classList.add('hidden'));
     document.getElementById('mini-play-btn').addEventListener('click', togglePlay);
     document.getElementById('mini-next-btn').addEventListener('click', nextTrack);
     document.getElementById('mini-like-btn').addEventListener('click', () => toggleLike(state.currentTrackId));
@@ -1113,12 +1430,34 @@
     document.getElementById('player-prev-btn').addEventListener('click', prevTrack);
     document.getElementById('player-dual-heart-btn').addEventListener('click', () => toggleLike(state.currentTrackId));
     document.getElementById('player-shuffle-btn').addEventListener('click', () => { state.shuffle = !state.shuffle; showToast(state.shuffle ? 'Перемешивание вкл.' : 'Перемешивание выкл.'); renderAll(); });
+
+    document.getElementById('player-lyrics-btn').addEventListener('click', () => {
+      state.lyricsOpen = !state.lyricsOpen;
+      renderPlayerView();
+      if (state.lyricsOpen) { pushNavState('lyrics'); loadLyricsForTrack(getCurrentTrack()); }
+      if (window.lucide) lucide.createIcons();
+    });
+    document.getElementById('close-lyrics-btn').addEventListener('click', () => { state.lyricsOpen = false; renderPlayerView(); });
+
+    document.getElementById('player-queue-btn').addEventListener('click', () => {
+      const list = getActiveList().length ? getActiveList() : state.tracks;
+      document.getElementById('queue-list').innerHTML = list.map(t => `
+        <button data-queue-play="${t.id}" class="w-full flex items-center gap-3 p-2 rounded-2xl text-left ${t.id === state.currentTrackId ? 'bg-white/15' : 'hover:bg-white/10'}">
+          <img src="${t.cover}" alt="" class="w-10 h-10 rounded-xl object-cover shrink-0" />
+          <div class="min-w-0 flex-1"><div class="text-sm font-bold truncate">${escapeHtml(t.title)}</div><div class="text-xs text-white/55 truncate">${escapeHtml(t.artist)}</div></div>
+        </button>
+      `).join('');
+      document.getElementById('queue-modal').classList.remove('hidden');
+      pushNavState('queue');
+    });
+    document.getElementById('close-queue-modal').addEventListener('click', () => document.getElementById('queue-modal').classList.add('hidden'));
+
     document.getElementById('player-fx-toggle').addEventListener('click', () => { document.getElementById('fx-modal').classList.remove('hidden'); pushNavState('fx'); });
     document.getElementById('close-fx-modal').addEventListener('click', () => document.getElementById('fx-modal').classList.add('hidden'));
     document.getElementById('speed-slider').addEventListener('input', (e) => setSpeed(parseFloat(e.target.value)));
-    document.getElementById('speed-reset-btn').addEventListener('click', () => setSpeed(1.0));
     document.getElementById('pitch-toggle-btn').addEventListener('click', () => { state.pitchShiftMode = !state.pitchShiftMode; applyAudioSpeed(); renderAll(); });
     document.getElementById('library-search').addEventListener('input', (e) => { state.librarySearch = e.target.value; renderLibraryView(); if (window.lucide) lucide.createIcons(); });
+
     document.getElementById('jam-toggle-btn').addEventListener('click', () => {
       state.jamActive = !state.jamActive;
       if (state.jamActive) { state.jamUsed = true; connectJamRoom(); addJamLog('Комната ELYSION-26 открыта.'); persistState(); checkBadges(); }
