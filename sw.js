@@ -1,4 +1,4 @@
-const CACHE_NAME = 'elysion-v16-cache';
+const CACHE_NAME = 'elysion-v17-cache';
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon-512.png', './icon-1024.png'];
 
 self.addEventListener('install', (e) => {

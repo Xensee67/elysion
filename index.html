@@ -111,8 +111,8 @@
     #wave-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
 
     /* App Shell & Spring Scale Behind Player */
-    #app-main-shell { position: relative; z-index: 10; width: 100%; height: 100%; transition: transform 360ms cubic-bezier(0.32,0.72,0,1), opacity 300ms ease; transform-origin: center top; will-change: transform, opacity; }
-    body.player-open #app-main-shell { transform: scale(0.955); opacity: 0.42; pointer-events: none; }
+    #app-main-shell { position: relative; z-index: 10; width: 100%; height: 100%; transition: opacity 260ms ease; }
+    body.player-open #app-main-shell { opacity: 0.48; pointer-events: none; }
 
     .app-scroll-pane {
       position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -160,12 +160,17 @@
     #player-sheet.is-open { transform: translate3d(0, 0, 0); }
     #player-sheet.is-dragging { transition: none !important; }
 
-    .player-mesh-layer { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 0; }
-    .player-mesh-orb { position: absolute; border-radius: 9999px; filter: blur(95px); transition: background 0.9s ease; opacity: 0.52; }
-    .pm-orb-1 { width: 380px; height: 380px; top: -70px; left: -80px; background: var(--mesh-a); animation: orbFloat 14s ease-in-out infinite alternate; }
-    .pm-orb-2 { width: 360px; height: 360px; bottom: -40px; right: -80px; background: var(--mesh-b); animation: orbFloat 17s ease-in-out infinite alternate-reverse; }
-    .pm-orb-3 { width: 320px; height: 320px; top: 34%; left: 18%; background: var(--mesh-c); opacity: 0.44; }
-    .player-mesh-scrim { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(7,4,15,0.22) 0%, rgba(7,4,15,0.38) 55%, rgba(7,4,15,0.72) 100%); }
+    /* Pure GPU radial-gradient mesh (0ms blur cost -> silky 120 FPS slide!) */
+    .player-mesh-layer {
+      position: absolute; inset: 0; pointer-events: none; z-index: 0;
+      background:
+        radial-gradient(circle at 22% 18%, color-mix(in srgb, var(--mesh-a) 58%, transparent) 0%, transparent 62%),
+        radial-gradient(circle at 82% 72%, color-mix(in srgb, var(--mesh-b) 48%, transparent) 0%, transparent 64%),
+        radial-gradient(circle at 50% 46%, color-mix(in srgb, var(--mesh-c) 52%, transparent) 0%, transparent 72%),
+        linear-gradient(to bottom, rgba(8,5,16,0.25) 0%, rgba(8,5,16,0.78) 100%),
+        #080510;
+      transition: background 0.55s ease;
+    }
 
     .player-inner {
       position: relative; z-index: 2; width: 100%; max-width: 440px; height: 100%; margin: 0 auto;
@@ -313,7 +318,7 @@
           <button data-nav="profile" class="nav-btn flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-white/60 transition"><span id="sidebar-profile-label">Профиль</span></button>
         </nav>
       </div>
-      <div class="text-[11px] text-white/40 px-2">Elysion v1.6</div>
+      <div class="text-[11px] text-white/40 px-2">Elysion v1.7</div>
     </aside>
 
     <!-- VIEW 1: LIBRARY -->
@@ -681,7 +686,7 @@
           <div id="mini-player-card" class="glass-dock rounded-2xl p-2 flex items-center gap-2.5 cursor-pointer active:scale-[0.99] transition">
             <div class="relative w-11 h-11 rounded-xl overflow-hidden flex-shrink-0 bg-white/10">
               <img id="mini-cover" src="" alt="" class="w-full h-full object-cover" />
-              <div id="mini-eq" class="eq-paused absolute inset-0 bg-black/40 flex items-end justify-center gap-0.5 pb-1.5 text-white"><span class="eq-bar"></span><span class="eq-bar"></span><span class="eq-bar"></span></div>
+              <div id="mini-eq" class="eq-paused absolute inset-0 bg-black/40 flex items-center justify-center gap-[3px] text-white"><span class="eq-bar"></span><span class="eq-bar"></span><span class="eq-bar"></span></div>
             </div>
             <div class="flex-1 min-w-0"><div id="mini-title" class="text-sm font-bold truncate">—</div><div id="mini-artist" class="text-xs text-white/55 truncate">—</div></div>
             <button id="btn-mini-like" class="w-8 h-8 rounded-full flex items-center justify-center text-white/70 active:scale-90 transition"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></button>
@@ -704,16 +709,11 @@
 
   <!-- FULLSCREEN SPRING PLAYER 2.0 (True Mesh BG + Embedded Lyrics & Queue + Clean Header) -->
   <section id="player-sheet" aria-label="Плеер">
-    <div class="player-mesh-layer" aria-hidden="true">
-      <div class="player-mesh-orb pm-orb-1"></div>
-      <div class="player-mesh-orb pm-orb-2"></div>
-      <div class="player-mesh-orb pm-orb-3"></div>
-      <div class="player-mesh-scrim"></div>
-    </div>
+    <div class="player-mesh-layer" aria-hidden="true"></div>
 
     <div class="player-inner">
-      <!-- Clean Header: Collapse + Context Subtitle (No Connected, No top-right cover icon) -->
-      <div>
+      <!-- Clean Header: Collapse + Context Subtitle -->
+      <div id="player-top-header">
         <div class="w-10 h-1 rounded-full bg-white/20 mx-auto mb-2"></div>
         <div class="flex items-center justify-between">
           <button id="btn-close-player" class="w-10 h-10 rounded-full flex items-center justify-center text-white/80 active:scale-90 transition"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 12 15 18 9"/></svg></button>
@@ -750,7 +750,13 @@
             <img id="lyrics-mini-cover" src="" alt="" class="w-10 h-10 rounded-xl object-cover" />
             <div class="min-w-0"><div id="lyrics-mini-title" class="text-sm font-bold truncate">—</div><div id="lyrics-mini-artist" class="text-xs text-white/60 truncate">—</div></div>
           </div>
-          <button id="btn-close-lyrics" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-xs text-white/80">✕</button>
+          <div class="flex items-center gap-1.5 flex-shrink-0">
+            <button id="btn-open-quote-modal" class="px-3 h-8 rounded-full bg-white/10 hover:bg-white/15 flex items-center gap-1.5 text-[11px] font-bold text-white/90 active:scale-95 transition" title="Создать карточку цитаты">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+              <span>Цитата</span>
+            </button>
+            <button id="btn-close-lyrics" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-xs text-white/80">✕</button>
+          </div>
         </div>
         <div id="lyrics-container" class="lyrics-scroll no-scrollbar"></div>
       </div>
@@ -764,8 +770,8 @@
         <div id="queue-list" class="flex-1 overflow-y-auto no-scrollbar space-y-1.5 pt-2.5 pb-4" style="touch-action: pan-y;"></div>
       </div>
 
-      <!-- Title (Clean: NO Добавил Рома!) + Waveform + Controls + 5-Icon Dock -->
-      <div class="space-y-3">
+      <!-- Title + Waveform + Controls + 5-Icon Dock (Isolated from vertical collapse drag!) -->
+      <div id="player-bottom-controls" class="space-y-3">
         <div id="player-title-block" class="text-center px-2">
           <div id="player-title" class="text-xl font-extrabold tracking-tight truncate">—</div>
           <button id="btn-player-artist" class="text-sm text-white/75 hover:text-white active:opacity-70 truncate max-w-full mt-0.5 inline-block">—</button>
@@ -937,7 +943,53 @@
     </div>
   </div>
 
-  <audio id="audio-el" preload="auto" playsinline></audio>
+
+  <!-- MODAL: INTERACTIVE CROP & ZOOM (Avatar & Profile Banner) -->
+  <div id="crop-modal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-4" style="z-index: 85;">
+    <div class="glass-dock w-full max-w-md rounded-3xl p-5 space-y-4">
+      <div class="flex items-center justify-between">
+        <div id="crop-modal-title" class="text-base font-extrabold">Кадрирование фото</div>
+        <button data-close-modal="crop-modal" class="w-8 h-8 rounded-full bg-white/10 text-xs">✕</button>
+      </div>
+      <div class="text-[11px] text-white/55 text-center">Двигай фото пальцем и регулируй масштаб</div>
+      <div class="flex items-center justify-center py-2">
+        <div id="crop-viewport" class="relative overflow-hidden border-2 border-white/35 bg-black/60 shadow-2xl" style="width: 240px; height: 240px; border-radius: 9999px; touch-action: none;">
+          <img id="crop-preview-img" src="" alt="" class="absolute top-1/2 left-1/2 max-w-none pointer-events-none select-none" style="transform: translate(-50%, -50%) scale(1);" />
+        </div>
+      </div>
+      <div class="space-y-1.5">
+        <div class="flex justify-between text-xs text-white/65"><span>Масштаб</span><span id="crop-zoom-val" class="font-bold text-white">1.0×</span></div>
+        <input id="crop-zoom-slider" type="range" min="1.0" max="3.0" step="0.02" value="1.0" class="w-full accent-pink-500" />
+      </div>
+      <div class="flex gap-2.5 pt-1">
+        <button data-close-modal="crop-modal" class="flex-1 py-3 rounded-2xl bg-white/10 text-xs font-bold">Отмена</button>
+        <button id="btn-crop-apply" class="flex-1 py-3 rounded-2xl accent-grad text-xs font-extrabold shadow-lg">Применить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: LYRICS QUOTE CARD GENERATOR -->
+  <div id="quote-modal" class="hidden fixed inset-0 bg-black/88 backdrop-blur-md flex flex-col p-4" style="z-index: 82; padding-top: calc(14px + var(--safe-top)); padding-bottom: calc(14px + var(--safe-bottom));">
+    <div class="w-full max-w-md mx-auto flex flex-col h-full">
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <div class="text-base font-extrabold">Карточка цитаты</div>
+          <div class="text-[11px] text-white/55">Выбери до 4 строк из текста</div>
+        </div>
+        <button data-close-modal="quote-modal" class="w-9 h-9 rounded-full bg-white/10 text-xs">✕</button>
+      </div>
+      <div class="flex justify-center mb-3">
+        <canvas id="quote-preview-canvas" width="540" height="675" class="rounded-2xl border border-white/15 shadow-2xl" style="width: min(56vw, 210px); height: auto;"></canvas>
+      </div>
+      <div id="quote-lines-picker" class="flex-1 overflow-y-auto no-scrollbar space-y-1.5 pb-3" style="touch-action: pan-y;"></div>
+      <button id="btn-quote-share" class="w-full py-3.5 rounded-2xl accent-grad text-sm font-extrabold shadow-lg mt-2 flex items-center justify-center gap-2">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+        <span>Сохранить / Поделиться</span>
+      </button>
+    </div>
+  </div>
+
+  <audio id="audio-el" crossorigin="anonymous" preload="auto" playsinline></audio>
 
   <script>
     const SUPABASE_URL = 'https://kotaahqgtupoortjpcqx.supabase.co';
@@ -1164,7 +1216,7 @@
     let iosTouchStartY = 0;
     document.addEventListener('touchstart', (e) => { iosTouchStartY = e.touches[0]?.clientY || 0; }, { passive: true });
     document.addEventListener('touchmove', (e) => {
-      const pane = e.target.closest('.app-scroll-pane, .lyrics-scroll, #pl-edit-tracks-list, #pl-add-tracks-list, #queue-list, #cover-candidates, .sheet-panel');
+      const pane = e.target.closest('.app-scroll-pane, .lyrics-scroll, #pl-edit-tracks-list, #pl-add-tracks-list, #queue-list, #cover-candidates, #quote-lines-picker, .sheet-panel');
       if (!pane) {
         if (!e.target.closest('#player-sheet') && !e.target.closest('#waveform-scrubber') && !e.target.closest('input[type="range"]')) e.preventDefault();
         return;
@@ -1298,7 +1350,7 @@
     function closeAnyModal() {
       const fx = document.getElementById('fx-modal');
       if (fx && fx.classList.contains('is-open')) { closeSpringSheet('fx-modal'); return true; }
-      for (const id of ['pl-add-tracks-modal', 'playlist-edit-modal', 'track-menu-modal', 'artist-picker-modal', 'cover-modal', 'upload-modal', 'playlist-modal']) {
+      for (const id of ['crop-modal', 'quote-modal', 'pl-add-tracks-modal', 'playlist-edit-modal', 'track-menu-modal', 'artist-picker-modal', 'cover-modal', 'upload-modal', 'playlist-modal']) {
         const el = document.getElementById(id);
         if (el && !el.classList.contains('hidden')) { el.classList.add('hidden'); return true; }
       }
@@ -2309,7 +2361,8 @@
     document.getElementById('btn-change-banner-settings').addEventListener('click', () => document.getElementById('banner-file-input').click());
     document.getElementById('banner-file-input').addEventListener('change', (e) => {
       const f = e.target.files?.[0]; if (!f) return;
-      readImageFileAsDataUrl(f, 900, 420, async (url) => { getPrefs().banner = url; await syncMyCloudProfile({ banner_url: url }); renderAll(); showToast('Обложка профиля обновлена!'); });
+      e.target.value = '';
+      openCropModal(f, 'banner', async (url) => { getPrefs().banner = url; await syncMyCloudProfile({ banner_url: url }); renderAll(); showToast('Обложка профиля обновлена!'); });
     });
     document.getElementById('btn-edit-status').addEventListener('click', async () => {
       const val = prompt('Короткий статус в профиле:', getProfileStatus(getUser()));
@@ -2450,7 +2503,8 @@
     document.getElementById('btn-profile-avatar').addEventListener('click', () => document.getElementById('avatar-file-input').click());
     document.getElementById('avatar-file-input').addEventListener('change', (e) => {
       const f = e.target.files?.[0]; if (!f) return;
-      readImageFileAsDataUrl(f, 256, 256, async (url) => { getPrefs().avatar = url; await syncMyCloudProfile({ avatar_url: url }); renderAll(); showToast('Аватар синхронизирован!'); });
+      e.target.value = '';
+      openCropModal(f, 'avatar', async (url) => { getPrefs().avatar = url; await syncMyCloudProfile({ avatar_url: url }); renderAll(); showToast('Аватар синхронизирован!'); });
     });
     document.getElementById('btn-change-pin').addEventListener('click', () => openAuthOverlay('change', getUser()));
     document.getElementById('btn-switch-account').addEventListener('click', () => openAuthOverlay('choose'));
@@ -2483,13 +2537,18 @@
     const playerSheet = document.getElementById('player-sheet'), carouselTrack = document.getElementById('cover-carousel-track');
     let pStartX = 0, pStartY = 0, pAxis = null, pDragX = 0, pDragY = 0, carouselBusy = false;
 
+    let pGestureActive = false;
     playerSheet.addEventListener('touchstart', (e) => {
-      if (carouselBusy || e.target.closest('#waveform-scrubber') || e.target.closest('#lyrics-container') || e.target.closest('#queue-list')) return;
+      if (carouselBusy || state.scrubbing) return;
+      if (e.target.closest('#player-bottom-controls, #waveform-outer, #waveform-scrubber, #lyrics-container, #queue-list')) {
+        pGestureActive = false; return;
+      }
+      pGestureActive = true;
       pStartX = e.touches[0].clientX; pStartY = e.touches[0].clientY; pAxis = null; pDragX = 0; pDragY = 0;
     }, { passive: true });
 
     playerSheet.addEventListener('touchmove', (e) => {
-      if (carouselBusy) return;
+      if (carouselBusy || state.scrubbing || !pGestureActive) return;
       const dx = e.touches[0].clientX - pStartX, dy = e.touches[0].clientY - pStartY;
       if (!pAxis && (Math.abs(dx) > 10 || Math.abs(dy) > 10)) pAxis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
       if (pAxis === 'y' && dy > 0) {
@@ -2502,7 +2561,8 @@
     }, { passive: true });
 
     playerSheet.addEventListener('touchend', () => {
-      if (carouselBusy) return;
+      if (carouselBusy || state.scrubbing || !pGestureActive) { pGestureActive = false; return; }
+      pGestureActive = false;
       if (pAxis === 'y') {
         playerSheet.classList.remove('is-dragging');
         if (pDragY > 95) closePlayerSheet(); else playerSheet.style.transform = '';
@@ -2577,6 +2637,236 @@
         }
       });
     }
+
+
+    // =========================================================================
+    // INTERACTIVE CROP & ZOOM ENGINE (Avatar 1:1 & Profile Banner 16:7)
+    // =========================================================================
+    const cropState = { img: null, mode: 'avatar', zoom: 1, offX: 0, offY: 0, baseScale: 1, vpW: 240, vpH: 240, outW: 256, outH: 256, onApply: null, dragging: false, sx: 0, sy: 0, sox: 0, soy: 0 };
+
+    function updateCropPreview() {
+      const el = document.getElementById('crop-preview-img');
+      if (!cropState.img) return;
+      const dispW = cropState.img.width * cropState.baseScale * cropState.zoom;
+      const dispH = cropState.img.height * cropState.baseScale * cropState.zoom;
+      const maxX = Math.max(0, (dispW - cropState.vpW) / 2);
+      const maxY = Math.max(0, (dispH - cropState.vpH) / 2);
+      cropState.offX = Math.min(maxX, Math.max(-maxX, cropState.offX));
+      cropState.offY = Math.min(maxY, Math.max(-maxY, cropState.offY));
+      el.style.width = `${cropState.img.width * cropState.baseScale}px`;
+      el.style.height = `${cropState.img.height * cropState.baseScale}px`;
+      el.style.transform = `translate(calc(-50% + ${cropState.offX}px), calc(-50% + ${cropState.offY}px)) scale(${cropState.zoom})`;
+      document.getElementById('crop-zoom-val').textContent = `${cropState.zoom.toFixed(1)}×`;
+    }
+
+    function openCropModal(file, mode, onApply) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          cropState.img = img;
+          cropState.mode = mode;
+          cropState.zoom = 1.0;
+          cropState.offX = 0;
+          cropState.offY = 0;
+          cropState.onApply = onApply;
+          const vp = document.getElementById('crop-viewport');
+          if (mode === 'banner') {
+            cropState.vpW = 300; cropState.vpH = 148; cropState.outW = 900; cropState.outH = 444;
+            vp.style.width = '300px'; vp.style.height = '148px'; vp.style.borderRadius = '24px';
+            document.getElementById('crop-modal-title').textContent = 'Кадрирование обложки профиля';
+          } else {
+            cropState.vpW = 228; cropState.vpH = 228; cropState.outW = 300; cropState.outH = 300;
+            vp.style.width = '228px'; vp.style.height = '228px'; vp.style.borderRadius = '9999px';
+            document.getElementById('crop-modal-title').textContent = 'Кадрирование аватара';
+          }
+          cropState.baseScale = Math.max(cropState.vpW / img.width, cropState.vpH / img.height);
+          document.getElementById('crop-preview-img').src = reader.result;
+          document.getElementById('crop-zoom-slider').value = '1.0';
+          updateCropPreview();
+          document.getElementById('crop-modal').classList.remove('hidden');
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    const cropVp = document.getElementById('crop-viewport');
+    cropVp.addEventListener('pointerdown', (e) => {
+      cropState.dragging = true; cropState.sx = e.clientX; cropState.sy = e.clientY;
+      cropState.sox = cropState.offX; cropState.soy = cropState.offY;
+      cropVp.setPointerCapture(e.pointerId);
+    });
+    cropVp.addEventListener('pointermove', (e) => {
+      if (!cropState.dragging) return;
+      cropState.offX = cropState.sox + (e.clientX - cropState.sx);
+      cropState.offY = cropState.soy + (e.clientY - cropState.sy);
+      updateCropPreview();
+    });
+    cropVp.addEventListener('pointerup', () => { cropState.dragging = false; });
+    cropVp.addEventListener('pointercancel', () => { cropState.dragging = false; });
+    document.getElementById('crop-zoom-slider').addEventListener('input', (e) => { cropState.zoom = Number(e.target.value); updateCropPreview(); });
+    document.getElementById('btn-crop-apply').addEventListener('click', () => {
+      if (!cropState.img || !cropState.onApply) return;
+      const c = document.createElement('canvas'); c.width = cropState.outW; c.height = cropState.outH;
+      const ctx = c.getContext('2d');
+      const totalScale = cropState.baseScale * cropState.zoom;
+      const ratioOut = cropState.outW / cropState.vpW;
+      const drawW = cropState.img.width * totalScale * ratioOut;
+      const drawH = cropState.img.height * totalScale * ratioOut;
+      const dx = (cropState.outW - drawW) / 2 + cropState.offX * ratioOut;
+      const dy = (cropState.outH - drawH) / 2 + cropState.offY * ratioOut;
+      ctx.drawImage(cropState.img, dx, dy, drawW, drawH);
+      const dataUrl = c.toDataURL('image/jpeg', 0.85);
+      document.getElementById('crop-modal').classList.add('hidden');
+      cropState.onApply(dataUrl);
+    });
+
+    // =========================================================================
+    // LYRICS QUOTE CARD GENERATOR (Long-press line or tap «Цитата»)
+    // =========================================================================
+    let quoteSelectedIdx = [];
+
+    function getAllLyricTexts() {
+      if (state.currentLyrics?.synced?.length) return state.currentLyrics.synced.map(x => x.text);
+      if (state.currentLyrics?.plain) return state.currentLyrics.plain.split('\n').map(s => s.trim()).filter(Boolean);
+      return [];
+    }
+
+    function openQuoteModal(initialIdx = -1) {
+      const lines = getAllLyricTexts();
+      if (!lines.length) { showToast('Текст для этого трека не найден'); return; }
+      const start = initialIdx >= 0 ? initialIdx : Math.max(0, state.lastActiveLyricIdx);
+      quoteSelectedIdx = [start];
+      if (start + 1 < lines.length) quoteSelectedIdx.push(start + 1);
+      renderQuotePicker();
+      renderQuoteCanvas(document.getElementById('quote-preview-canvas'), 540, 675);
+      document.getElementById('quote-modal').classList.remove('hidden');
+      haptic(14);
+    }
+
+    function renderQuotePicker() {
+      const lines = getAllLyricTexts();
+      const box = document.getElementById('quote-lines-picker');
+      box.innerHTML = lines.map((txt, i) => {
+        const on = quoteSelectedIdx.includes(i);
+        return `<button data-quote-line="${i}" class="w-full text-left py-2.5 px-3.5 rounded-2xl text-xs font-bold transition ${on ? 'accent-grad text-white shadow' : 'glass-soft text-white/70'}">${escapeHtml(txt)}</button>`;
+      }).join('');
+      box.querySelectorAll('[data-quote-line]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const i = Number(btn.dataset.quoteLine);
+          if (quoteSelectedIdx.includes(i)) {
+            if (quoteSelectedIdx.length > 1) quoteSelectedIdx = quoteSelectedIdx.filter(x => x !== i);
+          } else {
+            if (quoteSelectedIdx.length >= 4) quoteSelectedIdx.shift();
+            quoteSelectedIdx.push(i);
+            quoteSelectedIdx.sort((a, b) => a - b);
+          }
+          haptic(8);
+          renderQuotePicker();
+          renderQuoteCanvas(document.getElementById('quote-preview-canvas'), 540, 675);
+        });
+      });
+    }
+
+    function drawRoundedRect(ctx, x, y, w, h, r) {
+      ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+    }
+
+    function wrapCanvasLines(ctx, text, maxW) {
+      const words = text.split(' '), out = []; let cur = '';
+      words.forEach(w => {
+        const test = cur ? `${cur} ${w}` : w;
+        if (ctx.measureText(test).width > maxW && cur) { out.push(cur); cur = w; } else { cur = test; }
+      });
+      if (cur) out.push(cur);
+      return out;
+    }
+
+    function renderQuoteCanvas(canvas, W, H) {
+      const tr = getCurrentTrack(); if (!tr) return Promise.resolve();
+      const lines = getAllLyricTexts();
+      const picked = quoteSelectedIdx.map(i => lines[i]).filter(Boolean);
+      canvas.width = W; canvas.height = H;
+      const ctx = canvas.getContext('2d');
+      const s = W / 540;
+
+      // Adaptive cover-color gradient background
+      const cA = state.coverMesh?.a || '#6D28D9', cB = state.coverMesh?.b || '#DB2777';
+      const bg = ctx.createLinearGradient(0, 0, W, H);
+      bg.addColorStop(0, '#0B0617'); bg.addColorStop(0.5, '#130B24'); bg.addColorStop(1, '#07040F');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+
+      const g1 = ctx.createRadialGradient(W * 0.2, H * 0.18, 0, W * 0.2, H * 0.18, W * 0.85);
+      g1.addColorStop(0, cA); g1.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.globalAlpha = 0.55; ctx.fillStyle = g1; ctx.fillRect(0, 0, W, H);
+
+      const g2 = ctx.createRadialGradient(W * 0.85, H * 0.85, 0, W * 0.85, H * 0.85, W * 0.85);
+      g2.addColorStop(0, cB); g2.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.globalAlpha = 0.45; ctx.fillStyle = g2; ctx.fillRect(0, 0, W, H);
+      ctx.globalAlpha = 1;
+
+      const drawTextAndFooter = () => {
+        // Track title & artist next to cover
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = `800 ${Math.round(21 * s)}px "Plus Jakarta Sans", sans-serif`;
+        ctx.fillText(tr.title.slice(0, 28), 118 * s, 68 * s);
+        ctx.fillStyle = 'rgba(255,255,255,0.68)';
+        ctx.font = `600 ${Math.round(15 * s)}px "Plus Jakarta Sans", sans-serif`;
+        ctx.fillText(tr.artist.slice(0, 34), 118 * s, 94 * s);
+
+        // Quote lines
+        ctx.fillStyle = '#FFFFFF';
+        const fontSize = picked.length >= 4 ? 26 : 30;
+        ctx.font = `800 ${Math.round(fontSize * s)}px "Plus Jakarta Sans", sans-serif`;
+        let y = 195 * s;
+        picked.forEach(line => {
+          wrapCanvasLines(ctx, line, W - 84 * s).forEach(wl => {
+            if (y < H - 105 * s) { ctx.fillText(wl, 42 * s, y); y += (fontSize + 13) * s; }
+          });
+          y += 10 * s;
+        });
+
+        // Subtle Elysion branding footer
+        ctx.fillStyle = 'rgba(255,255,255,0.58)';
+        ctx.font = `600 ${Math.round(14 * s)}px "Cinzel", Georgia, serif`;
+        ctx.fillText('E L Y S I O N', 42 * s, H - 36 * s);
+      };
+
+      return new Promise((resolve) => {
+        const img = new Image(); img.crossOrigin = 'anonymous';
+        img.onload = () => {
+          ctx.save(); drawRoundedRect(ctx, 42 * s, 42 * s, 62 * s, 62 * s, 14 * s); ctx.clip();
+          ctx.drawImage(img, 42 * s, 42 * s, 62 * s, 62 * s); ctx.restore();
+          drawTextAndFooter(); resolve();
+        };
+        img.onerror = () => { drawTextAndFooter(); resolve(); };
+        img.src = tr.cover;
+      });
+    }
+
+    document.getElementById('btn-open-quote-modal').addEventListener('click', () => openQuoteModal(-1));
+    let lyrPressTimer = null;
+    document.getElementById('lyrics-container').addEventListener('touchstart', (e) => {
+      const line = e.target.closest('.lyric-line'); if (!line) return;
+      lyrPressTimer = setTimeout(() => { openQuoteModal(Number(line.dataset.lyricIdx)); }, 480);
+    }, { passive: true });
+    document.getElementById('lyrics-container').addEventListener('touchend', () => { clearTimeout(lyrPressTimer); }, { passive: true });
+    document.getElementById('lyrics-container').addEventListener('touchmove', () => { clearTimeout(lyrPressTimer); }, { passive: true });
+
+    document.getElementById('btn-quote-share').addEventListener('click', async () => {
+      const hi = document.createElement('canvas');
+      await renderQuoteCanvas(hi, 1080, 1350);
+      hi.toBlob(async (blob) => {
+        if (!blob) return;
+        const file = new File([blob], 'elysion-quote.png', { type: 'image/png' });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          try { await navigator.share({ files: [file], title: 'Elysion' }); return; } catch {}
+        }
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'elysion-quote.png'; a.click();
+        showToast('Карточка цитаты сохранена!');
+      }, 'image/png');
+    });
 
     // Boot
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
