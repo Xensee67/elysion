@@ -131,7 +131,7 @@
     /* Unified Bottom Dock */
     #bottom-dock-shell {
       position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
-      padding: 12px 12px calc(6px + var(--safe-bottom)) 12px;
+      padding: 10px 12px max(10px, calc(var(--safe-bottom) - 12px)) 12px;
       background: linear-gradient(to top, rgba(7,4,15,0.98) 62%, rgba(7,4,15,0.72) 86%, transparent 100%);
       pointer-events: none;
     }
@@ -153,7 +153,7 @@
 
     /* Fullscreen Spring Player with True Smooth Multi-Orb Mesh Background */
     #player-sheet {
-      position: fixed; inset: 0; z-index: 45; height: 100dvh; overflow: hidden;
+      position: fixed; inset: 0; z-index: 45; height: auto; min-height: 100%; overflow: hidden;
       transform: translate3d(0, 100%, 0);
       transition: transform 340ms cubic-bezier(0.22, 1, 0.36, 1), visibility 0s linear 340ms;
       will-change: transform; contain: layout style paint;
@@ -183,7 +183,7 @@
     .player-inner {
       position: relative; z-index: 2; width: 100%; max-width: 440px; height: 100%; margin: 0 auto;
       display: flex; flex-direction: column; justify-content: space-between;
-      padding: calc(10px + var(--safe-top)) 20px calc(12px + var(--safe-bottom)) 20px;
+      padding: calc(10px + var(--safe-top)) 20px max(12px, calc(var(--safe-bottom) - 10px)) 20px;
       overflow: hidden;
     }
 
@@ -355,6 +355,44 @@
       filter: drop-shadow(0 8px 24px rgba(236,72,153,0.65));
     }
     #cover-dbltap-heart.burst { animation: coverHeartBurst 760ms cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+
+    /* v2.2: 2px Gradient Progress Bar on Mini-Player Top Edge */
+    #mini-player-card { position: relative; overflow: hidden; }
+    #mini-progress-track { position: absolute; top: 0; left: 10px; right: 10px; height: 2px; background: rgba(255,255,255,0.08); border-radius: 999px; overflow: hidden; pointer-events: none; z-index: 5; }
+    #mini-progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent-1), var(--accent-2)); border-radius: 999px; transition: width 180ms linear; }
+
+    /* v2.2: Ambient Cover Glow behind Player Cover */
+    #player-cover-glow {
+      position: absolute; inset: -14px; border-radius: 38px; z-index: -1; pointer-events: none;
+      background: radial-gradient(circle at 30% 30%, color-mix(in srgb, var(--mesh-a) 72%, transparent), transparent 65%),
+                  radial-gradient(circle at 75% 75%, color-mix(in srgb, var(--mesh-b) 68%, transparent), transparent 65%);
+      filter: blur(26px); opacity: 0.72; transform: scale(1.02);
+      transition: opacity 420ms ease, transform 420ms cubic-bezier(0.22,1,0.36,1);
+    }
+    .player-cover-frame.is-paused #player-cover-glow { opacity: 0.25; transform: scale(0.92); }
+
+    /* v2.2: Sticky Collapsing Glass Header for Playlist Detail */
+    #pl-sticky-header {
+      position: sticky; top: 0; z-index: 25;
+      margin: 0 -16px 12px -16px; padding: 10px 16px;
+      border-radius: 0 0 22px 22px;
+      transition: background-color 240ms ease, backdrop-filter 240ms ease, border-color 240ms ease;
+      border-bottom: 1px solid transparent;
+    }
+    #pl-sticky-header.is-stuck {
+      background: rgba(12, 8, 24, 0.82);
+      backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+      border-bottom-color: rgba(255,255,255,0.09);
+    }
+    #pl-sticky-center { opacity: 0; transform: translateY(6px); transition: opacity 220ms ease, transform 220ms ease; pointer-events: none; }
+    #pl-sticky-header.is-stuck #pl-sticky-center { opacity: 1; transform: translateY(0); pointer-events: auto; }
+
+    /* v2.2: Multi-Select Row Badge & Floating Action Bar */
+    .track-row.is-selected { border-color: rgba(236,72,153,0.75) !important; background: rgba(236,72,153,0.16) !important; }
+    #multiselect-bar {
+      position: fixed; left: 12px; right: 12px; bottom: calc(92px + max(10px, calc(var(--safe-bottom) - 12px)));
+      z-index: 44; max-width: 672px; margin: 0 auto;
+    }
   </style>
 </head>
 <body class="app-booting">
@@ -433,7 +471,8 @@
       <header class="flex items-center justify-between gap-2">
         <h1 class="text-2xl font-extrabold tracking-tight">Библиотека</h1>
         <div class="flex items-center gap-2">
-          <button id="btn-sync-cloud" class="w-10 h-10 rounded-full glass-soft flex items-center justify-center text-white/80 active:scale-95 transition" title="Обновить">
+          <button id="btn-open-history" class="w-10 h-10 rounded-full glass-soft flex items-center justify-center text-white/80 active:scale-90 transition" title="История прослушиваний"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg></button>
+            <button id="btn-sync-cloud" class="w-10 h-10 rounded-full glass-soft flex items-center justify-center text-white/80 active:scale-95 transition" title="Обновить">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg>
           </button>
           <button id="btn-open-upload" class="w-10 h-10 rounded-full glass-soft flex items-center justify-center text-white/85 active:scale-95 transition" title="Добавить трек">
@@ -483,10 +522,13 @@
             <h2 class="text-base font-extrabold">Все треки</h2>
             <span id="tracks-count-label" class="text-xs text-white/45 font-semibold">0</span>
           </div>
-          <button id="btn-lib-sort" class="px-3 py-1.5 rounded-full glass-soft text-xs font-bold text-pink-200 flex items-center gap-1.5 active:scale-95 transition">
+          <div class="flex items-center gap-1.5">
+            <button id="btn-lib-select" class="px-3 py-1.5 rounded-full glass-soft text-xs font-bold text-white/75 active:scale-95 transition">Выбрать</button>
+            <button id="btn-lib-sort" class="px-3 py-1.5 rounded-full glass-soft text-xs font-bold text-pink-200 flex items-center gap-1.5 active:scale-95 transition">
             <span id="lib-sort-label">По умолчанию</span>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
+          </div>
         </div>
         <div id="library-track-list" class="space-y-2"></div>
       </div>
@@ -507,6 +549,8 @@
         <button data-sfilter="tracks" class="sfilter-btn px-4 py-1.5 rounded-full text-xs font-bold glass-soft text-white/75">Треки</button>
         <button data-sfilter="artists" class="sfilter-btn px-4 py-1.5 rounded-full text-xs font-bold glass-soft text-white/75">Исполнители</button>
         <button data-sfilter="playlists" class="sfilter-btn px-4 py-1.5 rounded-full text-xs font-bold glass-soft text-white/75">Плейлисты</button>
+        <button data-sfilter="likes" class="sfilter-btn px-4 py-1.5 rounded-full text-xs font-bold glass-soft text-white/75 whitespace-nowrap">Мои лайки</button>
+        <button data-sfilter="matches" class="sfilter-btn px-4 py-1.5 rounded-full text-xs font-bold glass-soft text-white/75 whitespace-nowrap">Совпадения</button>
       </div>
       <div id="search-empty-state" class="space-y-5">
         <div class="space-y-2.5">
@@ -671,9 +715,13 @@
 
     <!-- SUB-VIEW: PLAYLIST 2.0 DETAIL -->
     <section id="view-playlist" class="app-view app-scroll-pane no-scrollbar hidden max-w-2xl mx-auto">
-      <header class="flex items-center justify-between mb-4">
-        <button id="btn-back-from-pl" class="w-10 h-10 rounded-full glass-soft flex items-center justify-center text-white/85">←</button>
-        <div class="flex items-center gap-2">
+      <header id="pl-sticky-header" class="flex items-center justify-between gap-2">
+        <button id="btn-back-from-pl" class="w-10 h-10 rounded-full glass-soft flex items-center justify-center text-white/85 flex-shrink-0">←</button>
+        <div id="pl-sticky-center" class="flex-1 min-w-0 flex items-center justify-center gap-2">
+          <span id="pl-sticky-title" class="text-sm font-extrabold truncate">—</span>
+          <button id="btn-pl-sticky-play" class="w-7 h-7 rounded-full bg-white text-slate-950 flex items-center justify-center flex-shrink-0 active:scale-90 transition"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg></button>
+        </div>
+        <div class="flex items-center gap-2 flex-shrink-0">
           <button id="btn-pl-edit" class="hidden px-3.5 py-2 rounded-full glass-soft text-xs font-bold flex items-center gap-1.5">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
             <span>Изменить</span>
@@ -853,6 +901,7 @@
       <div id="bottom-dock-inner">
         <div id="mini-player-wrap" class="hidden">
           <div id="mini-player-card" class="glass-dock rounded-2xl p-2 flex items-center gap-2 cursor-pointer transition">
+            <div id="mini-progress-track"><div id="mini-progress-fill"></div></div>
             <div id="mini-carousel-viewport">
               <div id="mini-carousel-track">
                 <div class="mini-slide">
@@ -913,7 +962,7 @@
         <div id="cover-carousel-viewport">
           <div id="cover-carousel-track">
             <div class="carousel-side-card"><img id="player-prev-cover-img" src="" alt="" class="w-full h-full object-cover pointer-events-none" /></div>
-            <div id="player-cover-frame" class="player-cover-frame is-paused rounded-[28px] overflow-hidden border border-white/15">
+            <div id="player-cover-frame" class="player-cover-frame is-paused rounded-[28px] border border-white/15" style="overflow: visible;"><div id="player-cover-glow"></div><div class="w-full h-full rounded-[28px] overflow-hidden relative">
               <img id="player-cover-img" src="" alt="" class="w-full h-full object-cover pointer-events-none" />
               <div id="cover-dbltap-heart"><svg width="74" height="74" viewBox="0 0 24 24" fill="#EC4899"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></div>
               <div id="player-speed-badge" class="hidden absolute top-3 right-3 px-2.5 py-1 rounded-full bg-black/65 backdrop-blur-md text-[10px] font-bold text-white">1.0×</div>
@@ -921,7 +970,7 @@
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
                 <span id="player-sleep-text"></span>
               </div>
-            </div>
+            </div></div>
             <div class="carousel-side-card"><img id="player-next-cover-img" src="" alt="" class="w-full h-full object-cover pointer-events-none" /></div>
           </div>
         </div>
@@ -1143,6 +1192,46 @@
     </div>
   </div>
 
+  <!-- FLOATING MULTI-SELECT ACTION BAR -->
+  <div id="multiselect-bar" class="hidden glass-strong rounded-3xl p-3 border border-pink-400/35 shadow-2xl flex items-center justify-between gap-2">
+    <div class="flex items-center gap-2 min-w-0">
+      <button id="btn-ms-close" class="w-8 h-8 rounded-full bg-white/10 text-xs flex items-center justify-center flex-shrink-0">✕</button>
+      <span id="ms-count-label" class="text-xs font-extrabold truncate">Выбрано: 0</span>
+    </div>
+    <div class="flex items-center gap-1.5 flex-shrink-0">
+      <button id="btn-ms-like" class="px-3 py-2 rounded-2xl bg-white/10 text-xs font-bold text-pink-300 active:scale-95 transition">Лайк</button>
+      <button id="btn-ms-add-pl" class="px-3 py-2 rounded-2xl accent-grad text-xs font-bold text-white active:scale-95 transition">В плейлист</button>
+      <button id="btn-ms-delete" class="px-3 py-2 rounded-2xl bg-rose-500/20 text-xs font-bold text-rose-300 active:scale-95 transition">Удалить</button>
+    </div>
+  </div>
+
+  <!-- SPRING SHEET: LISTENING HISTORY BY DAY -->
+  <div id="history-modal" class="sheet-backdrop">
+    <div class="sheet-panel glass-strong space-y-3">
+      <div class="w-10 h-1 rounded-full bg-white/20 mx-auto"></div>
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 class="text-base font-extrabold">История прослушиваний</h3>
+          <p class="text-[11px] text-white/55">Треки по дням — вернись к любому в 1 тап</p>
+        </div>
+        <button data-close-sheet="history-modal" class="w-8 h-8 rounded-full bg-white/10 text-xs flex items-center justify-center">✕</button>
+      </div>
+      <div id="history-grouped-list" class="space-y-4 max-h-[60dvh] overflow-y-auto no-scrollbar pb-2"></div>
+    </div>
+  </div>
+
+  <!-- SPRING SHEET: BATCH ADD TO PLAYLIST -->
+  <div id="ms-playlist-modal" class="sheet-backdrop">
+    <div class="sheet-panel glass-strong space-y-3">
+      <div class="w-10 h-1 rounded-full bg-white/20 mx-auto"></div>
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-extrabold">Добавить выбранные в плейлист</h3>
+        <button data-close-sheet="ms-playlist-modal" class="w-8 h-8 rounded-full bg-white/10 text-xs flex items-center justify-center">✕</button>
+      </div>
+      <div id="ms-playlist-list" class="space-y-1.5"></div>
+    </div>
+  </div>
+
   <!-- SPRING SHEET: SHARED WAVE 2.0 SETTINGS -->
   <div id="wave-settings-modal" class="sheet-backdrop">
     <div class="sheet-panel glass-strong space-y-4">
@@ -1356,7 +1445,7 @@
       activeArtistName: '',
       searchQuery: '',
       searchFilter: 'all',
-      sortMode: localStorage.getItem('elysion_sort_mode') || 'default', lyricOffsets: JSON.parse(localStorage.getItem('elysion_lyric_offsets') || '{}'), infiniteWave: localStorage.getItem('elysion_infinite_wave') !== '0', crossfadeSec: Number(localStorage.getItem('elysion_crossfade') || 0), bassBoost: Number(localStorage.getItem('elysion_bass_boost') || 0), playlistSearch: '', repeatMode: localStorage.getItem('elysion_repeat_mode') || 'off', waveBalance: localStorage.getItem('elysion_wave_balance') || '50-50', waveChar: localStorage.getItem('elysion_wave_char') || 'all', waveVibe: localStorage.getItem('elysion_wave_vibe') || 'any',
+      sortMode: localStorage.getItem('elysion_sort_mode') || 'default', lyricOffsets: JSON.parse(localStorage.getItem('elysion_lyric_offsets') || '{}'), infiniteWave: localStorage.getItem('elysion_infinite_wave') !== '0', crossfadeSec: Number(localStorage.getItem('elysion_crossfade') || 0), bassBoost: Number(localStorage.getItem('elysion_bass_boost') || 0), playlistSearch: '', repeatMode: localStorage.getItem('elysion_repeat_mode') || 'off', waveBalance: localStorage.getItem('elysion_wave_balance') || '50-50', waveChar: localStorage.getItem('elysion_wave_char') || 'all', waveVibe: localStorage.getItem('elysion_wave_vibe') || 'any', multiSelect: false, selectedIds: new Set(), listenLog: JSON.parse(localStorage.getItem('elysion_listen_log') || '[]'),
       playerOpen: false,
       playerMode: 'cover', // 'cover' | 'lyrics' | 'queue'
       playContextLabel: 'Вся коллекция',
@@ -1711,7 +1800,7 @@
     }
 
     function closeAnyModal() {
-      for (const sid of ['elysion-dialog-modal', 'wave-settings-modal', 'sort-modal', 'fx-modal', 'track-menu-modal', 'artist-picker-modal']) {
+      for (const sid of ['elysion-dialog-modal', 'ms-playlist-modal', 'history-modal', 'wave-settings-modal', 'sort-modal', 'fx-modal', 'track-menu-modal', 'artist-picker-modal']) {
         const s = document.getElementById(sid);
         if (s && s.classList.contains('is-open')) { closeSpringSheet(sid); return true; }
       }
@@ -1741,7 +1830,7 @@
     // =========================================================================
     // THEME, DYNAMIC COVER MESH & EQUALIZER
     // =========================================================================
-    let audioCtx = null, eqLow = null, eqMid = null, eqHigh = null, eqWired = false;
+    let audioCtx = null, eqLow = null, eqMid = null, eqHigh = null, audioAnalyser = null, eqWired = false;
     function ensureAudioEq() {
       if (eqWired) return true;
       try {
@@ -1750,7 +1839,8 @@
         eqLow = audioCtx.createBiquadFilter(); eqLow.type = 'lowshelf'; eqLow.frequency.value = 140;
         eqMid = audioCtx.createBiquadFilter(); eqMid.type = 'peaking'; eqMid.frequency.value = 1200; eqMid.Q.value = 1.0;
         eqHigh = audioCtx.createBiquadFilter(); eqHigh.type = 'highshelf'; eqHigh.frequency.value = 6000;
-        src.connect(eqLow); eqLow.connect(eqMid); eqMid.connect(eqHigh); eqHigh.connect(audioCtx.destination);
+        audioAnalyser = audioCtx.createAnalyser(); audioAnalyser.fftSize = 64;
+        src.connect(eqLow); eqLow.connect(eqMid); eqMid.connect(eqHigh); eqHigh.connect(audioAnalyser); audioAnalyser.connect(audioCtx.destination);
         eqWired = true; return true;
       } catch { return false; }
     }
@@ -2025,6 +2115,8 @@
       if (changed || restart) {
         audioEl.src = tr.audioUrl; audioEl.currentTime = 0; state.countedPlayForTrack = '';
         const st = getMyStats(); st.recentIds = [tr.id, ...st.recentIds.filter(id => id !== tr.id)].slice(0, 20); savePersistent();
+        state.listenLog = [{ id: tr.id, ts: Date.now() }, ...(state.listenLog || []).filter((x, i) => !(i === 0 && x.id === tr.id))].slice(0, 150);
+        try { localStorage.setItem('elysion_listen_log', JSON.stringify(state.listenLog)); } catch {}
         syncCoverMesh(tr);
         if (state.playerMode === 'lyrics') loadLyricsForTrack(tr);
       }
@@ -2447,7 +2539,7 @@
         ...state.playlists.map((p, i) => { const pTrs = getPlaylistTracks(p.id); return { id: p.id, name: p.name, sub: `${pTrs.length} треков`, cover: p.cover_url || pTrs[0]?.cover || FALLBACK_COVERS[i % 3] }; }),
         { id: 'matches', name: 'Наши совпадения', sub: `${m.matches} треков`, cover: FALLBACK_COVERS[0] },
         { id: 'smart-repeat', name: 'На репите', sub: `${(getMyStats().recentIds || []).length} треков`, cover: FALLBACK_COVERS[2] },
-        { id: 'smart-partner', name: `Вкус ${PROFILE_NAMES[getPartner()]}`, sub: `${getPlaylistTracks('smart-partner').length} открытий`, cover: FALLBACK_COVERS[0] },
+        { id: 'smart-partner', name: `Вкус ${getPartner() === 'he' ? 'Ромы' : 'Маши'}`, sub: `${getPlaylistTracks('smart-partner').length} открытий`, cover: FALLBACK_COVERS[0] },
         { id: 'smart-forgotten', name: 'Давно не слушали', sub: `${getPlaylistTracks('smart-forgotten').length} треков`, cover: FALLBACK_COVERS[1] },
         { id: 'all', name: 'Вся коллекция', sub: `${state.tracks.length} треков`, cover: FALLBACK_COVERS[1] }
       ];
@@ -2475,10 +2567,11 @@
     function renderPlaylistDetailView() {
       const id = state.activePlaylistDetailId; if (!id) return;
       const custom = state.playlists.find(p => p.id === id), tracks = getPlaylistTracks(id);
-      const SMART_NAMES = { matches: 'Наши совпадения', 'my-likes': 'Мне нравится', 'smart-repeat': 'На репите', 'smart-forgotten': 'Давно не слушали', 'smart-partner': `Вкус ${PROFILE_NAMES[getPartner()]}`, all: 'Вся коллекция' };
+      const SMART_NAMES = { matches: 'Наши совпадения', 'my-likes': 'Мне нравится', 'smart-repeat': 'На репите', 'smart-forgotten': 'Давно не слушали', 'smart-partner': `Вкус ${getPartner() === 'he' ? 'Ромы' : 'Маши'}`, all: 'Вся коллекция' };
       const name = custom ? custom.name : (SMART_NAMES[id] || 'Вся коллекция');
       document.getElementById('pl-detail-cover').src = custom?.cover_url || tracks[0]?.cover || FALLBACK_COVERS[0];
       document.getElementById('pl-detail-name').textContent = name;
+      const stTitle = document.getElementById('pl-sticky-title'); if (stTitle) stTitle.textContent = name;
       document.getElementById('pl-detail-desc').textContent = custom?.description || (id === 'matches' ? 'Треки, которые лайкнули и Рома, и Маша' : '');
       document.getElementById('pl-detail-meta').textContent = `${tracks.length} треков` + (custom ? ` · ${PROFILE_NAMES[custom.created_by] || 'Рома'}` : '');
       document.getElementById('btn-pl-edit').classList.toggle('hidden', !custom);
@@ -2512,13 +2605,15 @@
         return;
       }
       const matchedArtists = getAllArtistsSummary().filter(a => a.name.toLowerCase().includes(ql));
-      const matchedTracks = state.tracks.filter(t => (t.title + ' ' + t.artist).toLowerCase().includes(ql));
+      let matchedTracks = state.tracks.filter(t => (t.title + ' ' + t.artist).toLowerCase().includes(ql));
+      if (state.searchFilter === 'likes') matchedTracks = matchedTracks.filter(t => getUser() === 'he' ? t.likedHe : t.likedShe);
+      if (state.searchFilter === 'matches') matchedTracks = matchedTracks.filter(t => t.likedHe && t.likedShe);
       const matchedPls = state.playlists.filter(p => (p.name || '').toLowerCase().includes(ql));
       const f = state.searchFilter; let html = '';
       if ((f === 'all' || f === 'artists') && matchedArtists.length) {
         html += `<div><div class="text-xs font-bold uppercase tracking-wider text-white/50 mb-2.5">Исполнители</div><div class="space-y-2">${matchedArtists.slice(0, f === 'all' ? 4 : 20).map(a => `<button data-open-artist="${escapeHtml(a.name)}" class="w-full glass-soft rounded-2xl p-2.5 flex items-center gap-3 text-left"><img src="${a.photo}" alt="" class="w-12 h-12 rounded-full object-cover border border-white/15" /><div class="flex-1 min-w-0"><div class="text-sm font-bold truncate">${escapeHtml(a.name)}</div><div class="text-xs text-white/50">${a.count} треков</div></div><span class="text-white/40 pr-2">→</span></button>`).join('')}</div></div>`;
       }
-      if ((f === 'all' || f === 'tracks') && matchedTracks.length) {
+      if ((f === 'all' || f === 'tracks' || f === 'likes' || f === 'matches') && matchedTracks.length) {
         html += `<div><div class="text-xs font-bold uppercase tracking-wider text-white/50 mb-2.5">Треки (${matchedTracks.length})</div><div class="space-y-2">${matchedTracks.slice(0, f === 'all' ? 8 : 50).map(tr => buildTrackRowHtml(tr, 'all')).join('')}</div></div>`;
       }
       if ((f === 'all' || f === 'playlists') && matchedPls.length) {
@@ -4054,8 +4149,17 @@
       const step = () => {
         if (state.isPlaying && state.activeView === 'library' && !state.playerOpen) {
           t += 0.045;
-          const pulse = 1 + Math.sin(t) * 0.012;
-          card.style.boxShadow = `0 12px ${Math.round(32 + Math.sin(t) * 10)}px rgba(236,72,153,${(0.22 + Math.sin(t) * 0.08).toFixed(2)})`;
+          let energy = (Math.sin(t) + 1) * 0.5;
+          if (audioAnalyser) {
+            try {
+              const bins = new Uint8Array(audioAnalyser.frequencyBinCount);
+              audioAnalyser.getByteFrequencyData(bins);
+              const bass = (bins[0] + bins[1] + bins[2] + bins[3]) / (4 * 255);
+              if (bass > 0.01) energy = bass;
+            } catch {}
+          }
+          const pulse = 1 + energy * 0.026;
+          card.style.boxShadow = `0 12px ${Math.round(24 + energy * 24)}px rgba(236,72,153,${(0.16 + energy * 0.24).toFixed(2)})`;
           const cvs = document.getElementById('wave-canvas');
           if (cvs) cvs.style.transform = `scale(${pulse.toFixed(4)})`;
         }
@@ -4063,6 +4167,168 @@
       };
       requestAnimationFrame(step);
     })();
+
+
+    // =========================================================================
+    // V2.2: ZERO-GAP NEXT TRACK PRELOADER & 2PX MINI-PLAYER PROGRESS LINE
+    // =========================================================================
+    const preloadAudio = new Audio();
+    preloadAudio.preload = 'auto';
+    preloadAudio.crossOrigin = 'anonymous';
+    let preloadedTrackId = '';
+
+    audioEl.addEventListener('timeupdate', () => {
+      const dur = audioEl.duration || getCurrentTrack()?.duration || 0;
+      const cur = audioEl.currentTime || 0;
+      const pct = dur > 0 ? Math.min(100, Math.max(0, (cur / dur) * 100)) : 0;
+      const fill = document.getElementById('mini-progress-fill');
+      if (fill) fill.style.width = `${pct.toFixed(2)}%`;
+
+      // Preload next track in background during last 15 seconds for instant switch!
+      if (dur > 20 && dur - cur <= 15 && state.isPlaying) {
+        const { next } = getNeighborTracks();
+        if (next && next.id !== state.currentTrackId && next.id !== preloadedTrackId && next.audioUrl) {
+          preloadedTrackId = next.id;
+          try { preloadAudio.src = next.audioUrl; preloadAudio.load(); } catch {}
+        }
+      }
+    });
+
+    // =========================================================================
+    // V2.2: STICKY COLLAPSING PLAYLIST HEADER
+    // =========================================================================
+    const plPane = document.getElementById('view-playlist');
+    const plStickyHdr = document.getElementById('pl-sticky-header');
+    if (plPane && plStickyHdr) {
+      plPane.addEventListener('scroll', () => {
+        plStickyHdr.classList.toggle('is-stuck', plPane.scrollTop > 175);
+      }, { passive: true });
+    }
+    document.getElementById('btn-pl-sticky-play').addEventListener('click', () => {
+      document.getElementById('btn-pl-play')?.click();
+    });
+
+    // =========================================================================
+    // V2.2: LISTENING HISTORY BY DAY (Сегодня / Вчера / Ранее)
+    // =========================================================================
+    function renderHistoryModal() {
+      const box = document.getElementById('history-grouped-list'); if (!box) return;
+      const now = new Date();
+      const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+      const startYest = startToday - 86400000;
+      const groups = { today: [], yesterday: [], earlier: [] };
+      (state.listenLog || []).forEach(entry => {
+        const tr = state.tracks.find(t => t.id === entry.id);
+        if (!tr) return;
+        if (entry.ts >= startToday) groups.today.push({ tr, ts: entry.ts });
+        else if (entry.ts >= startYest) groups.yesterday.push({ tr, ts: entry.ts });
+        else groups.earlier.push({ tr, ts: entry.ts });
+      });
+      const renderGrp = (title, items) => items.length ? `
+        <div class="space-y-1.5">
+          <div class="text-[11px] font-bold uppercase tracking-wider text-white/50 px-1">${title}</div>
+          ${items.slice(0, 30).map(({ tr, ts }) => {
+            const tm = new Date(ts).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+            return `<div data-hist-play="${tr.id}" class="p-2 rounded-2xl bg-white/5 hover:bg-white/10 flex items-center gap-3 cursor-pointer active:scale-[0.99] transition">
+              <img src="${tr.cover}" alt="" class="w-10 h-10 rounded-xl object-cover flex-shrink-0" />
+              <div class="min-w-0 flex-1"><div class="text-xs font-bold truncate">${escapeHtml(tr.title)}</div><div class="text-[11px] text-white/55 truncate">${escapeHtml(tr.artist)}</div></div>
+              <span class="text-[10px] text-white/40 font-semibold flex-shrink-0">${tm}</span>
+            </div>`;
+          }).join('')}
+        </div>` : '';
+      const out = renderGrp('Сегодня', groups.today) + renderGrp('Вчера', groups.yesterday) + renderGrp('Ранее', groups.earlier);
+      box.innerHTML = out || '<div class="py-10 text-center text-xs text-white/45">История пока пуста — включи любой трек</div>';
+    }
+    document.getElementById('btn-open-history').addEventListener('click', () => {
+      haptic(10); renderHistoryModal(); openSpringSheet('history-modal');
+    });
+    document.getElementById('history-grouped-list').addEventListener('click', (e) => {
+      const row = e.target.closest('[data-hist-play]'); if (!row) return;
+      closeSpringSheet('history-modal');
+      playTrack(row.dataset.histPlay, true, false, null, 'История');
+    });
+
+    // =========================================================================
+    // V2.2: MULTI-SELECT MODE (Batch Like, Add to Playlist, Delete)
+    // =========================================================================
+    function setMultiSelect(on) {
+      state.multiSelect = !!on;
+      if (!on) state.selectedIds.clear();
+      document.getElementById('multiselect-bar').classList.toggle('hidden', !state.multiSelect);
+      const btn = document.getElementById('btn-lib-select');
+      if (btn) {
+        btn.textContent = state.multiSelect ? 'Готово' : 'Выбрать';
+        btn.classList.toggle('accent-grad', state.multiSelect);
+        btn.classList.toggle('text-white', state.multiSelect);
+      }
+      syncMultiSelectUI();
+    }
+    function syncMultiSelectUI() {
+      document.getElementById('ms-count-label').textContent = `Выбрано: ${state.selectedIds.size}`;
+      document.querySelectorAll('.track-row').forEach(r => {
+        r.classList.toggle('is-selected', state.multiSelect && state.selectedIds.has(r.dataset.trackId));
+      });
+    }
+    document.getElementById('btn-lib-select').addEventListener('click', () => { haptic(10); setMultiSelect(!state.multiSelect); });
+    document.getElementById('btn-ms-close').addEventListener('click', () => setMultiSelect(false));
+
+    // Intercept track-row clicks when Multi-Select is active
+    document.addEventListener('click', (e) => {
+      if (!state.multiSelect) return;
+      const row = e.target.closest('.track-row');
+      if (!row || e.target.closest('#multiselect-bar')) return;
+      e.stopPropagation(); e.preventDefault();
+      const id = row.dataset.trackId; if (!id) return;
+      if (state.selectedIds.has(id)) state.selectedIds.delete(id); else state.selectedIds.add(id);
+      haptic(6); syncMultiSelectUI();
+    }, true);
+
+    document.getElementById('btn-ms-like').addEventListener('click', async () => {
+      const ids = Array.from(state.selectedIds); if (!ids.length) return;
+      const u = getUser();
+      for (const id of ids) {
+        const tr = state.tracks.find(t => t.id === id);
+        if (tr) {
+          if (u === 'he') tr.likedHe = true; else tr.likedShe = true;
+          if (sb) { try { await sb.from('tracks').update(u === 'he' ? { like_he: true } : { like_she: true }).eq('id', id); } catch {} }
+        }
+      }
+      setMultiSelect(false); renderAll(); showToast(`Лайкнуто треков: ${ids.length}`);
+    });
+
+    document.getElementById('btn-ms-add-pl').addEventListener('click', () => {
+      if (!state.selectedIds.size) return;
+      const box = document.getElementById('ms-playlist-list');
+      box.innerHTML = state.playlists.length
+        ? state.playlists.map(p => `<button data-ms-pl="${p.id}" class="w-full py-3 px-4 rounded-2xl bg-white/5 hover:bg-white/10 text-left text-sm font-bold flex items-center justify-between"><span>${escapeHtml(p.name)}</span><span class="text-xs text-white/45">${getPlaylistTracks(p.id).length} тр.</span></button>`).join('')
+        : '<div class="py-4 text-center text-xs text-white/45">Сначала создай плейлист в Библиотеке</div>';
+      openSpringSheet('ms-playlist-modal');
+    });
+    document.getElementById('ms-playlist-list').addEventListener('click', async (e) => {
+      const b = e.target.closest('[data-ms-pl]'); if (!b) return;
+      const pid = b.dataset.msPl, ids = Array.from(state.selectedIds);
+      closeSpringSheet('ms-playlist-modal');
+      if (!state.playlistMap[pid]) state.playlistMap[pid] = [];
+      let added = 0;
+      for (const tid of ids) {
+        if (!state.playlistMap[pid].includes(tid)) {
+          state.playlistMap[pid].push(tid); added++;
+          if (sb) { try { await sb.from('playlist_tracks').insert({ playlist_id: pid, track_id: tid, position: state.playlistMap[pid].length }); } catch {} }
+        }
+      }
+      setMultiSelect(false); renderAll(); showToast(`Добавлено в плейлист: ${added}`);
+    });
+
+    document.getElementById('btn-ms-delete').addEventListener('click', async () => {
+      const ids = Array.from(state.selectedIds); if (!ids.length) return;
+      const ok = await elysionConfirm({ title: `Удалить выбранные треки (${ids.length})?`, subtitle: 'Они исчезнут из коллекции и плейлистов', confirmText: 'Удалить', danger: true });
+      if (!ok) return;
+      for (const id of ids) {
+        if (sb) { try { await sb.from('playlist_tracks').delete().eq('track_id', id); await sb.from('tracks').delete().eq('id', id); } catch {} }
+      }
+      state.tracks = state.tracks.filter(t => !state.selectedIds.has(t.id));
+      setMultiSelect(false); renderAll(); showToast(`Удалено треков: ${ids.length}`);
+    });
 
     // Boot
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
