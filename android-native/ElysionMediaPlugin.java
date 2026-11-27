@@ -7,6 +7,9 @@ import android.os.Build;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Base64;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -92,5 +95,31 @@ public class ElysionMediaPlugin extends Plugin {
         } catch (Exception e) {
             call.reject("Save failed: " + e.getMessage());
         }
+    }
+
+    @PluginMethod
+    public void setImmersiveStatusBar(PluginCall call) {
+        boolean hide = Boolean.TRUE.equals(call.getBoolean("hide", false));
+        if (getActivity() == null) {
+            call.resolve();
+            return;
+        }
+        getActivity().runOnUiThread(() -> {
+            try {
+                WindowInsetsControllerCompat ctrl = WindowCompat.getInsetsController(
+                    getActivity().getWindow(),
+                    getActivity().getWindow().getDecorView()
+                );
+                if (ctrl != null) {
+                    ctrl.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+                    if (hide) {
+                        ctrl.hide(WindowInsetsCompat.Type.statusBars());
+                    } else {
+                        ctrl.show(WindowInsetsCompat.Type.statusBars());
+                    }
+                }
+            } catch (Exception ignored) {}
+            call.resolve();
+        });
     }
 }
