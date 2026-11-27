@@ -15,15 +15,37 @@ for d, sz in sizes.items():
     fg.save(f'{p}/ic_launcher_foreground.png')
 
 with open('android/app/src/main/res/values/ic_launcher_background.xml', 'w') as f:
-    f.write('<?xml version="1.0" encoding="utf-8"?><resources><color name="ic_launcher_background">#09060F</color></resources>')
+    f.write('<?xml version="1.0" encoding="utf-8"?><resources><color name="ic_launcher_background">#07040F</color></resources>')
 
-# 2. Copy native MediaSession Service & Plugin
+# 2. Seamless Android 12+ SplashScreen (solid #07040F + transparent system icon so animated Elysion splash takes over cleanly)
+os.makedirs('android/app/src/main/res/values-v31', exist_ok=True)
+with open('android/app/src/main/res/values-v31/styles.xml', 'w') as f:
+    f.write('''<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
+        <item name="android:windowBackground">#07040F</item>
+        <item name="android:windowSplashScreenBackground">#07040F</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@android:color/transparent</item>
+        <item name="android:statusBarColor">#07040F</item>
+        <item name="android:navigationBarColor">#07040F</item>
+    </style>
+</resources>
+''')
+
+styles_path = 'android/app/src/main/res/values/styles.xml'
+if os.path.exists(styles_path):
+    st = open(styles_path).read()
+    if '@drawable/splash' in st:
+        st = st.replace('@drawable/splash', '#07040F')
+        open(styles_path, 'w').write(st)
+
+# 3. Copy native MediaSession Service & Plugin
 pkg_dir = 'android/app/src/main/java/com/elysion/duo'
 os.makedirs(pkg_dir, exist_ok=True)
 shutil.copy('android-native/ElysionMediaService.java', pkg_dir)
 shutil.copy('android-native/ElysionMediaPlugin.java', pkg_dir)
 
-# 3. Register ElysionMediaPlugin in MainActivity.java
+# 4. Register ElysionMediaPlugin in MainActivity.java
 with open(os.path.join(pkg_dir, 'MainActivity.java'), 'w') as f:
     f.write('''package com.elysion.duo;
 
@@ -39,14 +61,14 @@ public class MainActivity extends BridgeActivity {
 }
 ''')
 
-# 4. Add androidx.media dependency
+# 5. Add androidx.media dependency
 bg = 'android/app/build.gradle'
 s = open(bg).read()
 if 'androidx.media:media:' not in s:
     s = s.replace('dependencies {', 'dependencies {\n    implementation "androidx.media:media:1.7.0"')
     open(bg, 'w').write(s)
 
-# 5. Add permissions & Foreground Media Service to AndroidManifest.xml
+# 6. Add permissions & Foreground Media Service to AndroidManifest.xml
 mf = 'android/app/src/main/AndroidManifest.xml'
 ms = open(mf).read()
 perms = '''
@@ -66,4 +88,4 @@ svc = '''
 if 'ElysionMediaService' not in ms:
     ms = ms.replace('</application>', svc)
 open(mf, 'w').write(ms)
-print('ANDROID PATCH OK')
+print('ANDROID PATCH V1.5 OK')
