@@ -40,6 +40,8 @@
     @supports (height: 100dvh) { html, body { height: 100dvh; } }
 
     .font-brand { font-family: 'Cinzel', Georgia, serif; letter-spacing: 0.28em; }
+    *::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }
+    * { scrollbar-width: none !important; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     body.app-booting #app-main-shell { opacity: 0 !important; visibility: hidden !important; pointer-events: none !important; }
@@ -318,7 +320,7 @@
           <button data-nav="profile" class="nav-btn flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-white/60 transition"><span id="sidebar-profile-label">Профиль</span></button>
         </nav>
       </div>
-      <div class="text-[11px] text-white/40 px-2">Elysion v1.7</div>
+      <div class="text-[11px] text-white/40 px-2">Elysion v1.8</div>
     </aside>
 
     <!-- VIEW 1: LIBRARY -->
@@ -366,7 +368,13 @@
       </div>
 
       <div>
-        <div class="flex items-center justify-between mb-2.5"><h2 id="tracks-section-title" class="text-base font-extrabold">Все треки</h2><span id="tracks-count-label" class="text-xs text-white/50">0 треков</span></div>
+        <div class="flex items-center justify-between gap-2 mb-3">
+          <div class="glass-soft rounded-full p-1 inline-flex items-center gap-1">
+            <button data-lib-scope="all" class="lib-scope-btn px-3.5 py-1 rounded-full text-xs font-bold accent-grad text-white transition">Все треки</button>
+            <button data-lib-scope="offline" class="lib-scope-btn px-3.5 py-1 rounded-full text-xs font-bold text-white/65 transition">Загружено</button>
+          </div>
+          <span id="tracks-count-label" class="text-xs text-white/50">0 треков</span>
+        </div>
         <div id="library-track-list" class="space-y-2"></div>
       </div>
     </section>
@@ -556,6 +564,9 @@
         <div id="pl-detail-meta" class="text-[11px] text-white/45 mt-1">0 треков</div>
         <div class="flex gap-2.5 mt-4 w-full max-w-xs">
           <button id="btn-pl-play" class="flex-1 py-3 rounded-full bg-white text-slate-950 text-xs font-extrabold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg><span>Слушать</span></button>
+          <button id="btn-pl-download" class="w-12 h-11 rounded-full glass-card flex items-center justify-center text-white/85 active:scale-95 transition flex-shrink-0" title="Скачать плейлист офлайн">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </button>
           <button id="btn-pl-shuffle" class="flex-1 py-3 rounded-full glass-card text-xs font-bold flex items-center justify-center gap-1.5 active:scale-95 transition">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
             <span>Перемешать</span>
@@ -605,6 +616,10 @@
         <div class="glass-soft rounded-2xl p-3.5"><div class="text-[11px] text-white/50">Совпадений</div><div id="stat-matches" class="text-xl font-extrabold mt-0.5" style="color: var(--accent-2);">0</div></div>
         <div class="glass-soft rounded-2xl p-3.5"><div class="text-[11px] text-white/50">Прослушиваний</div><div id="stat-plays" class="text-xl font-extrabold mt-0.5">0</div></div>
         <div class="glass-soft rounded-2xl p-3.5"><div class="text-[11px] text-white/50">Совместимость</div><div id="stat-compat" class="text-xl font-extrabold mt-0.5" style="color: var(--accent-1);">0%</div></div>
+      </div>
+      <div id="couple-moments-block">
+        <h2 class="text-base font-extrabold mb-2.5">Наши моменты</h2>
+        <div id="couple-moments-list" class="space-y-2"></div>
       </div>
       <div><h2 class="text-base font-extrabold mb-3">Коллекция бейджей пары</h2><div id="badges-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div></div>
     </section>
@@ -775,6 +790,10 @@
         <div id="player-title-block" class="text-center px-2">
           <div id="player-title" class="text-xl font-extrabold tracking-tight truncate">—</div>
           <button id="btn-player-artist" class="text-sm text-white/75 hover:text-white active:opacity-70 truncate max-w-full mt-0.5 inline-block">—</button>
+          <div id="player-moment-pill" class="hidden mt-1.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/8 border border-white/10 text-[11px] text-pink-200/90 max-w-full truncate">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" class="flex-shrink-0"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span id="player-moment-text" class="truncate"></span>
+          </div>
         </div>
 
         <div id="player-transport-wrap" class="space-y-3">
@@ -880,15 +899,18 @@
     </div>
   </div>
 
-  <!-- MODAL: TRACK CONTEXT MENU (Clean Thin SVG Icons) -->
-  <div id="track-menu-modal" class="hidden fixed inset-0 bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-4" style="z-index: 65;">
-    <div class="glass-dock w-full max-w-md rounded-3xl p-5 space-y-3">
+  <!-- SPRING SHEET: TRACK CONTEXT MENU -->
+  <div id="track-menu-modal" class="sheet-backdrop" style="z-index: 65;">
+    <div class="sheet-panel glass-dock space-y-3 no-scrollbar">
+      <div class="w-10 h-1 rounded-full bg-white/20 mx-auto"></div>
       <div class="flex items-center gap-3 pb-2 border-b border-white/10">
         <img id="tm-cover" src="" alt="" class="w-12 h-12 rounded-xl object-cover" />
         <div class="min-w-0 flex-1"><div id="tm-title" class="text-sm font-extrabold truncate">—</div><div id="tm-artist" class="text-xs text-white/55 truncate">—</div></div>
-        <button data-close-modal="track-menu-modal" class="w-8 h-8 rounded-full bg-white/10 text-sm">✕</button>
+        <button data-close-sheet="track-menu-modal" class="w-8 h-8 rounded-full bg-white/10 text-xs">✕</button>
       </div>
       <div class="space-y-1.5">
+        <button id="tm-download-offline" class="w-full py-3 px-4 rounded-2xl bg-white/5 hover:bg-white/10 text-left text-xs font-bold flex items-center gap-3"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span id="tm-download-label">Скачать для офлайн</span></button>
+        <button id="tm-edit-moment" class="w-full py-3 px-4 rounded-2xl bg-white/5 hover:bg-white/10 text-left text-xs font-bold flex items-center gap-3"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Оставить заметку (Наш момент)</span></button>
         <button id="tm-pin-profile" class="w-full py-3 px-4 rounded-2xl bg-white/5 hover:bg-white/10 text-left text-xs font-bold flex items-center gap-3"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg><span>Закрепить в моём профиле</span></button>
         <button id="tm-go-artist" class="w-full py-3 px-4 rounded-2xl bg-white/5 hover:bg-white/10 text-left text-xs font-bold flex items-center gap-3"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Перейти к исполнителю</span></button>
         <button id="tm-add-playlist" class="w-full py-3 px-4 rounded-2xl bg-white/5 hover:bg-white/10 text-left text-xs font-bold flex items-center gap-3"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Добавить в плейлист</span></button>
@@ -900,11 +922,15 @@
     </div>
   </div>
 
-  <!-- MODAL: MULTI-ARTIST PICKER -->
-  <div id="artist-picker-modal" class="hidden fixed inset-0 bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-4" style="z-index: 65;">
-    <div class="glass-dock w-full max-w-sm rounded-3xl p-5 space-y-3">
-      <div class="flex items-center justify-between"><div class="text-sm font-extrabold">Выбери исполнителя</div><button data-close-modal="artist-picker-modal" class="w-8 h-8 rounded-full bg-white/10 text-sm">✕</button></div>
-      <div id="artist-picker-list" class="space-y-2"></div>
+  <!-- SPRING SHEET: MULTI-ARTIST PICKER (Elysion Style) -->
+  <div id="artist-picker-modal" class="sheet-backdrop" style="z-index: 65;">
+    <div class="sheet-panel glass-dock space-y-3 no-scrollbar">
+      <div class="w-10 h-1 rounded-full bg-white/20 mx-auto"></div>
+      <div class="flex items-center justify-between pb-1">
+        <div class="text-base font-extrabold">Исполнители</div>
+        <button data-close-sheet="artist-picker-modal" class="w-8 h-8 rounded-full bg-white/10 text-xs">✕</button>
+      </div>
+      <div id="artist-picker-list" class="space-y-1.5"></div>
     </div>
   </div>
 
@@ -1045,6 +1071,8 @@
       activeArtistName: '',
       searchQuery: '',
       searchFilter: 'all',
+      libraryScope: 'all',
+      offlineIds: loadJson('elysion_v18_offline_ids', []),
       playerOpen: false,
       playerMode: 'cover', // 'cover' | 'lyrics' | 'queue'
       playContextLabel: 'Вся коллекция',
@@ -1296,7 +1324,7 @@
       document.getElementById('queue-list').innerHTML = getActiveList().map(tr => `
         <div data-track-id="${tr.id}" class="track-row p-2.5 rounded-2xl flex items-center gap-3 cursor-pointer transition ${tr.id === state.currentTrackId ? 'bg-white/15 border border-white/15' : 'bg-white/5 hover:bg-white/10'}">
           <img src="${tr.cover}" alt="" class="w-11 h-11 rounded-xl object-cover flex-shrink-0" />
-          <div class="min-w-0 flex-1"><div class="text-sm font-bold truncate ${tr.id === state.currentTrackId ? 'text-pink-300' : ''}">${escapeHtml(tr.title)}</div><div class="text-xs text-white/55 truncate">${escapeHtml(tr.artist)}</div></div>
+          <div class="min-w-0 flex-1"><div class="text-sm font-bold truncate ${tr.id === state.currentTrackId ? 'text-pink-300' : ''}">${escapeHtml(tr.title)}</div><div class="text-xs text-white/55 truncate flex items-center gap-1.5"><span>${escapeHtml(tr.artist)}</span>${state.offlineIds.includes(tr.id) ? '<span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" title="Загружено офлайн"></span>' : ""}</div></div>
         </div>
       `).join('');
     }
@@ -1343,14 +1371,24 @@
     function handleArtistClick(artistString) {
       const list = splitArtists(artistString);
       if (list.length <= 1) { openArtistPage(list[0] || artistString); return; }
-      document.getElementById('artist-picker-list').innerHTML = list.map(a => `<button data-pick-artist="${escapeHtml(a)}" class="w-full py-3 px-4 rounded-2xl bg-white/8 hover:bg-white/15 text-left text-sm font-bold flex items-center justify-between"><span>${escapeHtml(a)}</span><span class="text-white/45">→</span></button>`).join('');
-      document.getElementById('artist-picker-modal').classList.remove('hidden');
+      document.getElementById('artist-picker-list').innerHTML = list.map(a => {
+        const nl = a.toLowerCase();
+        const cnt = state.tracks.filter(t => splitArtists(t.artist).some(x => x.toLowerCase() === nl)).length;
+        const photo = state.artistPhotoCache[nl] || '';
+        const avHtml = photo
+          ? `<img src="${photo}" alt="" class="w-10 h-10 rounded-full object-cover border border-white/15 flex-shrink-0" />`
+          : `<div class="w-10 h-10 rounded-full bg-white/10 border border-white/10 flex items-center justify-center flex-shrink-0 text-white/75"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg></div>`;
+        return `<button data-pick-artist="${escapeHtml(a)}" class="w-full py-2.5 px-3 rounded-2xl bg-white/5 hover:bg-white/12 active:scale-[0.99] transition text-left flex items-center gap-3">${avHtml}<div class="flex-1 min-w-0"><div class="text-sm font-bold truncate">${escapeHtml(a)}</div><div class="text-[11px] text-white/50">${cnt} тр. в коллекции</div></div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white/40"><polyline points="9 18 15 12 9 6"/></svg></button>`;
+      }).join('');
+      openSpringSheet('artist-picker-modal');
     }
 
     function closeAnyModal() {
-      const fx = document.getElementById('fx-modal');
-      if (fx && fx.classList.contains('is-open')) { closeSpringSheet('fx-modal'); return true; }
-      for (const id of ['crop-modal', 'quote-modal', 'pl-add-tracks-modal', 'playlist-edit-modal', 'track-menu-modal', 'artist-picker-modal', 'cover-modal', 'upload-modal', 'playlist-modal']) {
+      for (const sid of ['fx-modal', 'track-menu-modal', 'artist-picker-modal']) {
+        const s = document.getElementById(sid);
+        if (s && s.classList.contains('is-open')) { closeSpringSheet(sid); return true; }
+      }
+      for (const id of ['crop-modal', 'quote-modal', 'pl-add-tracks-modal', 'playlist-edit-modal', 'cover-modal', 'upload-modal', 'playlist-modal']) {
         const el = document.getElementById(id);
         if (el && !el.classList.contains('hidden')) { el.classList.add('hidden'); return true; }
       }
@@ -1616,7 +1654,7 @@
       const changed = state.currentTrackId !== tr.id;
       state.currentTrackId = tr.id;
       if (changed || restart) {
-        audioEl.src = tr.audioUrl; audioEl.currentTime = 0; state.countedPlayForTrack = '';
+        resolvePlayableUrl(tr).then(u => { if (state.currentTrackId === tr.id && audioEl.src !== u) { audioEl.src = u; audioEl.play().catch(()=>{}); } }); audioEl.src = tr.audioUrl; audioEl.currentTime = 0; state.countedPlayForTrack = '';
         const st = getMyStats(); st.recentIds = [tr.id, ...st.recentIds.filter(id => id !== tr.id)].slice(0, 20); savePersistent();
         syncCoverMesh(tr);
         if (state.playerMode === 'lyrics') loadLyricsForTrack(tr);
@@ -1816,7 +1854,7 @@
       return {
         id: row.id, title: row.title || 'Без названия', artist: row.artist || 'Unknown', duration: Number(row.duration || 180),
         cover, audioUrl, addedBy: row.added_by === 'she' ? 'she' : 'he',
-        likedHe: Boolean(row.like_he ?? row.liked_he), likedShe: Boolean(row.like_she ?? row.liked_she)
+        likedHe: Boolean(row.like_he ?? row.liked_he), likedShe: Boolean(row.like_she ?? row.liked_she), noteText: row.note_text || '', noteAuthor: row.note_author || ''
       };
     }
 
@@ -1857,8 +1895,10 @@
       document.getElementById('tm-cover').src = tr.cover;
       document.getElementById('tm-title').textContent = tr.title;
       document.getElementById('tm-artist').textContent = tr.artist;
+      const isOff = state.offlineIds.includes(tr.id);
+      document.getElementById('tm-download-label').textContent = isOff ? 'Удалить из офлайн-кэша' : 'Скачать для офлайн';
       document.getElementById('tm-playlist-picker').classList.add('hidden');
-      document.getElementById('track-menu-modal').classList.remove('hidden');
+      openSpringSheet('track-menu-modal');
       haptic(10);
     }
 
@@ -1952,7 +1992,7 @@
       return `
         <div data-track-id="${tr.id}" data-queue-ctx="${queueContext}" class="track-row glass-soft rounded-2xl p-2.5 flex items-center gap-3 cursor-pointer ${active ? 'border-pink-400/50 bg-white/10' : ''} active:scale-[0.99] transition">
           <img src="${tr.cover}" alt="" class="w-12 h-12 rounded-xl object-cover flex-shrink-0 bg-white/10" loading="lazy" />
-          <div class="flex-1 min-w-0"><div class="text-sm font-bold truncate ${active ? 'text-pink-300' : ''}">${escapeHtml(tr.title)}</div><div class="text-xs text-white/55 truncate">${escapeHtml(tr.artist)}</div></div>
+          <div class="flex-1 min-w-0"><div class="text-sm font-bold truncate ${active ? 'text-pink-300' : ''}">${escapeHtml(tr.title)}</div><div class="text-xs text-white/55 truncate flex items-center gap-1.5"><span>${escapeHtml(tr.artist)}</span>${state.offlineIds.includes(tr.id) ? '<span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" title="Загружено офлайн"></span>' : ""}</div></div>
           <button data-like-id="${tr.id}" class="w-8 h-8 rounded-full flex items-center justify-center ${myLiked ? 'text-pink-400' : 'text-white/25'}">♥</button>
           <button data-menu-id="${tr.id}" class="w-8 h-8 rounded-full flex items-center justify-center text-white/45 hover:text-white">⋮</button>
         </div>
@@ -2007,8 +2047,13 @@
           <div class="relative z-10 text-[11px] text-white/70">${escapeHtml(c.sub)}</div>
         </button>
       `).join('');
-      document.getElementById('tracks-count-label').textContent = `${state.tracks.length} треков`;
-      document.getElementById('library-track-list').innerHTML = state.tracks.map(tr => buildTrackRowHtml(tr, 'all')).join('') || '<div class="py-8 text-center text-xs text-white/45">Треков пока нет</div>';
+      const visibleTracks = state.libraryScope === 'offline' ? state.tracks.filter(t => state.offlineIds.includes(t.id)) : state.tracks;
+      document.querySelectorAll('.lib-scope-btn').forEach(b => {
+        const on = b.dataset.libScope === state.libraryScope;
+        b.classList.toggle('accent-grad', on); b.classList.toggle('text-white', on); b.classList.toggle('text-white/65', !on);
+      });
+      document.getElementById('tracks-count-label').textContent = `${visibleTracks.length} треков`;
+      document.getElementById('library-track-list').innerHTML = visibleTracks.map(tr => buildTrackRowHtml(tr, state.libraryScope === 'offline' ? 'offline' : 'all')).join('') || (state.libraryScope === 'offline' ? '<div class="py-8 text-center text-xs text-white/45">Нет скачанных треков — нажми ⋮ → «Скачать для офлайн»</div>' : '<div class="py-8 text-center text-xs text-white/45">Треков пока нет</div>');
     }
 
     function renderPlaylistDetailView() {
@@ -2102,6 +2147,11 @@
       document.getElementById('player-title').textContent = cur.title;
       document.getElementById('btn-player-artist').textContent = cur.artist;
       document.getElementById('player-context-label').textContent = state.jamActive ? '● Live Jam' : (state.playContextLabel || 'Вся коллекция');
+      const mPill = document.getElementById('player-moment-pill');
+      if (cur.noteText) {
+        document.getElementById('player-moment-text').textContent = `${PROFILE_NAMES[cur.noteAuthor] || 'Рома'}: ${cur.noteText}`;
+        mPill.classList.remove('hidden');
+      } else { mPill.classList.add('hidden'); }
       document.getElementById('player-cover-frame').classList.toggle('is-paused', !state.isPlaying);
       document.getElementById('main-play-icon').innerHTML = state.isPlaying ? '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>' : '<polygon points="6 4 20 12 6 20 6 4"/>';
       document.getElementById('heart-he').style.opacity = cur.likedHe ? '1' : '0.26';
@@ -2183,6 +2233,17 @@
       document.getElementById('stat-matches').textContent = m.matches;
       document.getElementById('stat-plays').textContent = m.plays;
       document.getElementById('stat-compat').textContent = `${m.compat}%`;
+      const moments = state.tracks.filter(t => t.noteText);
+      document.getElementById('couple-moments-list').innerHTML = moments.length ? moments.map(tr => `
+        <div data-track-id="${tr.id}" class="track-row glass-card rounded-2xl p-3 flex items-center gap-3 cursor-pointer active:scale-[0.99] transition">
+          <img src="${tr.cover}" alt="" class="w-12 h-12 rounded-xl object-cover flex-shrink-0" />
+          <div class="min-w-0 flex-1">
+            <div class="text-xs font-bold text-pink-300 truncate">${escapeHtml(PROFILE_NAMES[tr.noteAuthor] || 'Рома')}: «${escapeHtml(tr.noteText)}»</div>
+            <div class="text-xs font-bold truncate mt-0.5">${escapeHtml(tr.title)}</div>
+            <div class="text-[11px] text-white/50 truncate">${escapeHtml(tr.artist)}</div>
+          </div>
+        </div>
+      `).join('') : '<div class="glass-soft rounded-2xl p-4 text-xs text-white/45 text-center">Нажми ⋮ на любом треке → «Оставить заметку», чтобы сохранить ваш момент</div>';
       document.getElementById('badges-grid').innerHTML = badges.map(b => `
         <div class="glass-card rounded-2xl p-4 flex items-center gap-3.5 ${b.unlocked ? 'border-pink-400/40' : 'opacity-65'}">
           <div class="w-12 h-12 rounded-2xl ${b.unlocked ? 'accent-grad text-white' : 'bg-white/10 text-white/60'} flex items-center justify-center flex-shrink-0">${b.icon}</div>
@@ -2253,7 +2314,7 @@
       const navBtn = e.target.closest('.nav-btn'); if (navBtn) { navigateTo(navBtn.dataset.nav); return; }
       const closeModal = e.target.closest('[data-close-modal]'); if (closeModal) { document.getElementById(closeModal.dataset.closeModal).classList.add('hidden'); return; }
       const closeSheet = e.target.closest('[data-close-sheet]'); if (closeSheet) { closeSpringSheet(closeSheet.dataset.closeSheet); return; }
-      if (e.target.id === 'fx-modal') { closeSpringSheet('fx-modal'); return; }
+      if (e.target.classList.contains('sheet-backdrop')) { closeSpringSheet(e.target.id); return; }
 
       const pickProf = e.target.closest('[data-pick-profile]');
       if (pickProf) {
@@ -2289,7 +2350,7 @@
 
       const openPl = e.target.closest('[data-open-pl]'); if (openPl) { openPlaylistDetail(openPl.dataset.openPl); return; }
       const openArt = e.target.closest('[data-open-artist]'); if (openArt) { openArtistPage(openArt.dataset.openArtist); return; }
-      const pickArt = e.target.closest('[data-pick-artist]'); if (pickArt) { document.getElementById('artist-picker-modal').classList.add('hidden'); openArtistPage(pickArt.dataset.pickArtist); return; }
+      const pickArt = e.target.closest('[data-pick-artist]'); if (pickArt) { closeSpringSheet('artist-picker-modal'); openArtistPage(pickArt.dataset.pickArtist); return; }
       const sfBtn = e.target.closest('[data-sfilter]'); if (sfBtn) { state.searchFilter = sfBtn.dataset.sfilter; renderSearchView(); return; }
       const recQ = e.target.closest('[data-recent-q]'); if (recQ) { state.searchQuery = recQ.dataset.recentQ; document.getElementById('search-tab-input').value = state.searchQuery; renderSearchView(); return; }
 
@@ -2401,10 +2462,10 @@
     document.getElementById('tm-pin-profile').addEventListener('click', async () => {
       if (!state.contextTrackId) return;
       getPrefs().pinnedTrackId = state.contextTrackId; await syncMyCloudProfile({ pinned_track_id: state.contextTrackId });
-      document.getElementById('track-menu-modal').classList.add('hidden'); renderProfileView(); showToast('Трек закреплён в твоём профиле!');
+      closeSpringSheet('track-menu-modal'); renderProfileView(); showToast('Трек закреплён в твоём профиле!');
     });
-    document.getElementById('tm-go-artist').addEventListener('click', () => { const tr = state.tracks.find(t => t.id === state.contextTrackId); document.getElementById('track-menu-modal').classList.add('hidden'); if (tr) handleArtistClick(tr.artist); });
-    document.getElementById('tm-pick-cover').addEventListener('click', () => { const tr = state.tracks.find(t => t.id === state.contextTrackId); document.getElementById('track-menu-modal').classList.add('hidden'); if (tr) openCoverPicker('', tr); });
+    document.getElementById('tm-go-artist').addEventListener('click', () => { const tr = state.tracks.find(t => t.id === state.contextTrackId); closeSpringSheet('track-menu-modal'); if (tr) handleArtistClick(tr.artist); });
+    document.getElementById('tm-pick-cover').addEventListener('click', () => { const tr = state.tracks.find(t => t.id === state.contextTrackId); closeSpringSheet('track-menu-modal'); if (tr) openCoverPicker('', tr); });
     document.getElementById('tm-add-playlist').addEventListener('click', () => {
       const box = document.getElementById('tm-playlist-picker'); box.classList.toggle('hidden');
       box.innerHTML = state.playlists.map(p => `<button data-add-to-pl="${p.id}" class="w-full py-2 px-3 rounded-xl bg-white/8 hover:bg-white/15 text-left text-xs font-bold">${escapeHtml(p.name)}</button>`).join('') || '<div class="text-xs text-white/45 py-2">Плейлистов пока нет</div>';
@@ -2416,7 +2477,7 @@
             if (!state.playlistMap[plId]) state.playlistMap[plId] = [];
             state.playlistMap[plId].push(state.contextTrackId); renderLibraryView(); showToast('Трек добавлен в плейлист!');
           }
-          document.getElementById('track-menu-modal').classList.add('hidden');
+          closeSpringSheet('track-menu-modal');
         });
       });
     });
@@ -2426,14 +2487,14 @@
       const newArtist = prompt('Исполнитель:', tr.artist) || tr.artist;
       tr.title = newTitle.trim(); tr.artist = newArtist.trim();
       if (sb) await sb.from('tracks').update({ title: tr.title, artist: tr.artist }).eq('id', tr.id);
-      document.getElementById('track-menu-modal').classList.add('hidden'); renderAll(); showToast('Трек переименован');
+      closeSpringSheet('track-menu-modal'); renderAll(); showToast('Трек переименован');
     });
     document.getElementById('tm-delete').addEventListener('click', async () => {
       const tr = state.tracks.find(t => t.id === state.contextTrackId);
       if (!tr || !confirm(`Удалить «${tr.title}» из коллекции?`)) return;
       if (sb) { await sb.from('playlist_tracks').delete().eq('track_id', tr.id); await sb.from('tracks').delete().eq('id', tr.id); }
       state.tracks = state.tracks.filter(t => t.id !== tr.id);
-      document.getElementById('track-menu-modal').classList.add('hidden'); renderAll(); showToast('Трек удалён');
+      closeSpringSheet('track-menu-modal'); renderAll(); showToast('Трек удалён');
     });
 
     document.getElementById('btn-auth-back').addEventListener('click', () => {
@@ -2857,6 +2918,15 @@
     document.getElementById('btn-quote-share').addEventListener('click', async () => {
       const hi = document.createElement('canvas');
       await renderQuoteCanvas(hi, 1080, 1350);
+      const nativePlugin = window.Capacitor?.Plugins?.ElysionMedia;
+      if (nativePlugin?.saveImage) {
+        try {
+          const dataUrl = hi.toDataURL('image/png');
+          await nativePlugin.saveImage({ base64: dataUrl, filename: `elysion_quote_${Date.now()}.png` });
+          showToast('Сохранено в Галерею (Pictures/Elysion)!');
+          return;
+        } catch {}
+      }
       hi.toBlob(async (blob) => {
         if (!blob) return;
         const file = new File([blob], 'elysion-quote.png', { type: 'image/png' });
@@ -2866,6 +2936,92 @@
         const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'elysion-quote.png'; a.click();
         showToast('Карточка цитаты сохранена!');
       }, 'image/png');
+    });
+
+
+    // =========================================================================
+    // OFFLINE CACHE ENGINE (Cache API — APK + iOS Safari PWA) & OUR MOMENTS
+    // =========================================================================
+    const OFFLINE_CACHE_NAME = 'elysion-offline-audio-v1';
+    let lastBlobUrl = '';
+
+    function saveOfflineIds() {
+      try { localStorage.setItem('elysion_v18_offline_ids', JSON.stringify(state.offlineIds)); } catch {}
+    }
+
+    async function resolvePlayableUrl(tr) {
+      if (!('caches' in window) || !state.offlineIds.includes(tr.id)) return tr.audioUrl;
+      try {
+        const cache = await caches.open(OFFLINE_CACHE_NAME);
+        const match = await cache.match(tr.audioUrl);
+        if (match) {
+          const blob = await match.blob();
+          if (lastBlobUrl) URL.revokeObjectURL(lastBlobUrl);
+          lastBlobUrl = URL.createObjectURL(blob);
+          return lastBlobUrl;
+        }
+      } catch {}
+      return tr.audioUrl;
+    }
+
+    async function toggleOfflineTrack(tr) {
+      if (!('caches' in window) || !tr?.audioUrl) { showToast('Офлайн-кэш недоступен'); return; }
+      const cache = await caches.open(OFFLINE_CACHE_NAME);
+      if (state.offlineIds.includes(tr.id)) {
+        await cache.delete(tr.audioUrl);
+        state.offlineIds = state.offlineIds.filter(id => id !== tr.id);
+        saveOfflineIds(); renderAll(); showToast('Удалено из офлайн-кэша');
+      } else {
+        showToast(`Скачиваю «${tr.title}»...`);
+        try {
+          const res = await fetch(tr.audioUrl);
+          if (!res.ok) throw new Error('fetch');
+          await cache.put(tr.audioUrl, res.clone());
+          if (!state.offlineIds.includes(tr.id)) state.offlineIds.push(tr.id);
+          saveOfflineIds(); renderAll(); showToast(`«${tr.title}» доступен офлайн!`);
+        } catch { showToast('Не удалось скачать трек'); }
+      }
+    }
+
+    document.addEventListener('click', (e) => {
+      const sc = e.target.closest('[data-lib-scope]');
+      if (sc) { state.libraryScope = sc.dataset.libScope; haptic(8); renderLibraryView(); }
+    });
+
+    document.getElementById('tm-download-offline').addEventListener('click', async () => {
+      const tr = state.tracks.find(t => t.id === state.contextTrackId);
+      closeSpringSheet('track-menu-modal');
+      if (tr) await toggleOfflineTrack(tr);
+    });
+
+    document.getElementById('btn-pl-download').addEventListener('click', async () => {
+      const trs = getPlaylistTracks(state.activePlaylistDetailId).filter(t => !state.offlineIds.includes(t.id));
+      if (!trs.length) { showToast('Все треки плейлиста уже загружены офлайн!'); return; }
+      showToast(`Скачиваю плейлист (${trs.length} треков)...`);
+      let ok = 0;
+      const cache = await caches.open(OFFLINE_CACHE_NAME);
+      for (const tr of trs) {
+        try {
+          const res = await fetch(tr.audioUrl);
+          if (res.ok) { await cache.put(tr.audioUrl, res.clone()); state.offlineIds.push(tr.id); ok++; saveOfflineIds(); }
+        } catch {}
+      }
+      renderAll(); showToast(`Готово! Загружено офлайн: ${ok} из ${trs.length}`);
+    });
+
+    document.getElementById('tm-edit-moment').addEventListener('click', async () => {
+      const tr = state.tracks.find(t => t.id === state.contextTrackId);
+      closeSpringSheet('track-menu-modal');
+      if (!tr) return;
+      const text = prompt('Заметка к треку (увидите только вы вдвоём):', tr.noteText || '');
+      if (text === null) return;
+      tr.noteText = text.trim();
+      tr.noteAuthor = getUser();
+      if (sb) {
+        try { await sb.from('tracks').update({ note_text: tr.noteText, note_author: tr.noteAuthor }).eq('id', tr.id); } catch {}
+      }
+      renderAll();
+      showToast(tr.noteText ? 'Момент сохранён!' : 'Заметка удалена');
     });
 
     // Boot
