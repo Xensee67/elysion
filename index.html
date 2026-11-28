@@ -101,7 +101,7 @@
     }
 
     /* Seamless Full-Bleed WebGL Wave & Edge-to-Edge Profile Hero (True Alpha Mask Dissolve) */
-    #view-wave { position: relative; padding-top: 0 !important; padding-left: 0 !important; padding-right: 0 !important; }
+    #view-wave { padding-top: 0 !important; padding-left: 0 !important; padding-right: 0 !important; }
     #wave-canvas {
       position: absolute; top: 0; left: 0; right: 0; width: 100%; height: 500px;
       pointer-events: none; z-index: 0;
@@ -117,7 +117,7 @@
       -webkit-mask-image: linear-gradient(to bottom, black 0%, black 54%, transparent 100%);
     }
     .profile-avatar-ring { box-shadow: 0 0 0 2.5px var(--accent-2), 0 0 24px color-mix(in srgb, var(--accent-2) 48%, transparent); }
-    .bento-likes-tile { background: linear-gradient(145deg, var(--accent-1), var(--accent-2)); box-shadow: 0 14px 32px color-mix(in srgb, var(--accent-1) 36%, transparent); }
+    .bento-likes-tile { background: linear-gradient(145deg, var(--accent-1), color-mix(in srgb, var(--accent-2) 82%, #07040F)); box-shadow: 0 14px 32px color-mix(in srgb, var(--accent-1) 36%, transparent); text-shadow: 0 1px 10px rgba(0,0,0,0.28); }
 
     /* App Shell & Spring Scale Behind Player */
     #app-main-shell { position: relative; z-index: 10; width: 100%; height: 100%; transition: opacity 260ms ease; }
@@ -1732,7 +1732,7 @@
       { id: 'ruby-neon', name: 'Рубин × Неон', a1: '#DC2626', a2: '#FB7185', ma: '#991B1B', mb: '#E11D48', mc: '#3B0714', rgb1: [220,38,38], rgb2: [251,113,133], rgb3: [190,18,60] },
       { id: 'sunset-coral', name: 'Закат × Коралл', a1: '#EA580C', a2: '#F43F5E', ma: '#C2410C', mb: '#E11D48', mc: '#3A1208', rgb1: [234,88,12], rgb2: [244,63,94], rgb3: [251,146,60] },
       { id: 'midnight-ice', name: 'Полуночный Лёд', a1: '#2563EB', a2: '#93C5FD', ma: '#1D4ED8', mb: '#38BDF8', mc: '#0B1736', rgb1: [37,99,235], rgb2: [147,197,253], rgb3: [56,189,248] },
-      { id: 'obsidian-silver', name: 'Обсидиан × Серебро', a1: '#64748B', a2: '#E2E8F0', ma: '#334155', mb: '#94A3B8', mc: '#0F172A', rgb1: [100,116,139], rgb2: [226,232,240], rgb3: [148,163,184] }
+      { id: 'obsidian-silver', name: 'Обсидиан × Серебро', a1: '#475569', a2: '#94A3B8', ma: '#334155', mb: '#64748B', mc: '#0F172A', rgb1: [118,136,162], rgb2: [198,210,226], rgb3: [148,163,184] }
     ];
     const EQ_PRESETS = [
       { id: 'flat', name: 'Обычный', low: 0, mid: 0, high: 0 },
@@ -1926,6 +1926,10 @@
           uniform vec3 u_c2;
           uniform vec3 u_c3;
 
+          vec3 liftColor(vec3 c, float minL) {
+            float l = max(max(c.r, c.g), c.b);
+            return l < minL ? mix(c, vec3(0.55, 0.38, 0.92), 0.35) + vec3(minL - l) : c;
+          }
           float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123); }
           float noise(vec2 p) {
             vec2 i = floor(p), f = fract(p);
@@ -1934,57 +1938,66 @@
           }
           float fbm(vec2 p) {
             float v = 0.0, a = 0.52;
-            mat2 rot = mat2(0.8, 0.6, -0.6, 0.8);
-            for (int i = 0; i < 4; i++) { v += a * noise(p); p = rot * p * 2.04 + vec2(1.3, 4.7); a *= 0.5; }
+            for (int i = 0; i < 4; i++) {
+              v += a * noise(p);
+              p = vec2(p.x * 1.6 - p.y * 1.2, p.x * 1.2 + p.y * 1.6) + vec2(1.7, 3.1);
+              a *= 0.5;
+            }
             return v;
           }
           void main() {
             vec2 uv = gl_FragCoord.xy / u_res;
             vec2 p = uv * 2.0 - 1.0;
             p.x *= u_res.x / max(1.0, u_res.y);
-            vec3 bg = vec3(0.024, 0.014, 0.052);
+            vec3 bg = vec3(0.028, 0.018, 0.062);
+            vec3 c1 = liftColor(u_c1, 0.42);
+            vec3 c2 = liftColor(u_c2, 0.52);
+            vec3 c3 = liftColor(u_c3, 0.36);
             float t = u_time;
             float e = u_energy;
             vec3 col = bg;
 
             if (u_style == 0) {
-              // 1. Жидкий шёлк — контрастные шёлковые складки с яркими бликами
-              vec2 q = vec2(fbm(p * 1.45 + vec2(t * 0.24, -t * 0.16)), fbm(p * 1.45 + vec2(-t * 0.2, t * 0.22) + 5.2));
-              vec2 r = vec2(fbm(p * 1.9 + q * 2.4 + vec2(t * 0.14, 1.7)), fbm(p * 1.9 + q * 2.4 + vec2(-t * 0.12, 8.3)));
-              float f = fbm(p * 1.6 + r * (2.1 + e * 0.85));
-              float ridge = 1.0 - abs(2.0 * f - 1.0);
-              float fold = pow(clamp(ridge, 0.0, 1.0), 2.4);
-              float spec = pow(clamp(ridge, 0.0, 1.0), 7.0);
-              vec3 silk = mix(u_c3 * 0.22, u_c1 * 0.92, smoothstep(0.12, 0.68, f));
-              silk = mix(silk, u_c2 * 1.15, smoothstep(0.35, 0.95, fold * 0.85 + r.x * 0.35));
-              silk += (u_c2 * 0.65 + vec3(0.35)) * spec * (0.45 + e * 0.65);
-              col = mix(bg, silk, 0.92);
+              // 1. Жидкий шёлк — широкие переливающиеся шёлковые волны по всему верху
+              vec2 q = vec2(
+                sin(p.x * 1.6 + t * 0.45) * 0.45 + fbm(p * 1.3 + vec2(t * 0.22, -t * 0.14)),
+                cos(p.y * 1.5 - t * 0.38) * 0.45 + fbm(p * 1.3 + vec2(-t * 0.18, t * 0.20) + 3.7)
+              );
+              float f = fbm(p * 1.55 + q * 1.45 + vec2(t * 0.12, -t * 0.09));
+              float waveFold = 0.5 + 0.5 * sin(f * 7.5 + q.x * 2.4 - t * 0.5);
+              float sheen = pow(waveFold, 3.2);
+              vec3 silk = mix(c3 * 0.42, c1 * 0.95, smoothstep(0.18, 0.78, f));
+              silk = mix(silk, c2 * 1.15, smoothstep(0.32, 0.92, waveFold));
+              silk += (c2 * 0.6 + vec3(0.35)) * sheen * (0.38 + e * 0.32);
+              col = mix(bg, silk, 0.88);
             } else if (u_style == 1) {
-              // 2. Северное сияние — чёткие вертикально-диагональные световые шлейфы
-              float sway1 = sin(p.x * 2.2 + t * 0.55) * 0.26 + cos(p.x * 3.8 - t * 0.4) * 0.12;
-              float sway2 = cos(p.x * 1.7 - t * 0.48) * 0.32 + sin(p.x * 3.1 + t * 0.62) * 0.14;
-              float streak1 = fbm(vec2(p.x * 5.8 + t * 0.18, p.y * 0.42 - t * 0.16));
-              float streak2 = fbm(vec2(p.x * 8.5 - t * 0.22, p.y * 0.35 - t * 0.24));
-              float band1 = exp(-abs(p.y - sway1 - (streak1 - 0.5) * 0.55) * 2.4) * smoothstep(0.25, 0.85, streak1);
-              float band2 = exp(-abs(p.y + 0.18 - sway2 - (streak2 - 0.5) * 0.5) * 2.9) * smoothstep(0.28, 0.88, streak2);
-              float rays = 0.62 + 0.38 * sin(p.x * 18.0 + streak1 * 7.0 + t * 0.8);
-              vec3 aur1 = mix(u_c1 * 1.15, u_c2 * 1.2, smoothstep(-0.7, 0.7, p.x));
-              vec3 aur2 = mix(u_c2, vec3(0.35, 0.88, 0.98), 0.42);
-              col = bg + (aur1 * band1 * rays * 1.1 + aur2 * band2 * 0.85) * (0.85 + e * 0.65);
+              // 2. Северное сияние — высокие вертикально-диагональные световые шлейфы
+              float x = p.x * 1.15;
+              float curve1 = sin(x * 1.8 + t * 0.35) * 0.24 + 0.26;
+              float curve2 = cos(x * 1.4 - t * 0.28) * 0.28 - 0.08;
+              float n1 = fbm(vec2(x * 3.8 + t * 0.14, uv.y * 0.7 - t * 0.12));
+              float n2 = fbm(vec2(x * 6.2 - t * 0.18, uv.y * 0.55 - t * 0.15));
+              float rays1 = 0.55 + 0.45 * sin(x * 14.0 + n1 * 6.0 + t * 0.6);
+              float rays2 = 0.55 + 0.45 * cos(x * 19.0 - n2 * 5.0 - t * 0.45);
+              float veil1 = exp(-abs(p.y - curve1 - (n1 - 0.5) * 0.45) * 1.55) * (0.45 + 0.75 * n1);
+              float veil2 = exp(-abs(p.y - curve2 - (n2 - 0.5) * 0.42) * 1.85) * (0.40 + 0.75 * n2);
+              vec3 a1 = mix(c1 * 1.15, c2 * 1.25, smoothstep(-0.8, 0.8, p.x));
+              vec3 a2 = mix(c2, vec3(0.32, 0.86, 0.96), 0.45);
+              col = bg + (a1 * veil1 * rays1 * 0.95 + a2 * veil2 * rays2 * 0.72) * (0.85 + e * 0.38);
             } else {
-              // 3. Жидкий пульсар — тонкие светящиеся неоновые кольца вокруг обложки
-              vec2 c = p - vec2(0.0, 0.08);
+              // 3. Жидкий пульсар — плавные светящиеся кольца вокруг обложки (без рывков!)
+              vec2 c = p - vec2(0.0, 0.06);
               float d = length(c);
               float ang = atan(c.y, c.x);
-              float w1 = fbm(vec2(ang * 2.4 + t * 0.35, d * 2.8 - t * 0.75)) * 0.12;
-              float rPos = fract((d + w1) * 3.4 - t * (0.48 + e * 0.35));
-              float thinRing = exp(-pow((rPos - 0.5) * 9.5, 2.0));
-              float rPos2 = fract((d - w1 * 0.8) * 2.2 - t * 0.32 + 0.35);
-              float thinRing2 = exp(-pow((rPos2 - 0.5) * 8.0, 2.0));
-              float env = smoothstep(0.18, 0.44, d) * exp(-max(0.0, d - 0.46) * 2.1);
-              vec3 ringCol = mix(u_c1 * 1.2, u_c2 * 1.3, 0.5 + 0.5 * sin(ang * 2.0 + t * 0.8));
-              vec3 coreGlow = mix(u_c1, u_c2, 0.5) * exp(-d * 2.4) * (0.42 + e * 0.35);
-              col = bg + coreGlow + ringCol * (thinRing * 1.15 + thinRing2 * 0.65) * env * (0.95 + e * 0.75);
+              float w = fbm(vec2(cos(ang) * 1.4 + t * 0.22, sin(ang) * 1.4 - t * 0.18)) * 0.09;
+              float r1 = fract((d + w) * 2.6 - t * 0.34);
+              float r2 = fract((d - w * 0.7) * 1.8 - t * 0.22 + 0.42);
+              float ring1 = exp(-pow((r1 - 0.5) * 6.2, 2.0));
+              float ring2 = exp(-pow((r2 - 0.5) * 5.2, 2.0));
+              float env = smoothstep(0.18, 0.42, d) * exp(-max(0.0, d - 0.45) * 1.75);
+              vec3 rCol = mix(c1 * 1.1, c2 * 1.22, 0.5 + 0.5 * sin(ang * 2.0 + t * 0.45));
+              vec3 glow = mix(c1, c2, 0.5) * exp(-d * 2.1) * (0.36 + e * 0.24);
+              col = bg + glow + rCol * (ring1 * 0.85 + ring2 * 0.48) * env * (0.85 + e * 0.38);
             }
             gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
           }
@@ -2060,8 +2073,8 @@
         for (let i = 0; i < 3; i++) for (let c = 0; c < 3; c++) waveCurColors[i][c] += (target[i][c] - waveCurColors[i][c]) * 0.06;
 
         const rawEnergy = sampleWaveAudioEnergy();
-        waveEnergySmooth += (rawEnergy - waveEnergySmooth) * 0.14;
-        waveTime += state.isPlaying ? (0.022 + waveEnergySmooth * 0.032) : 0.009;
+        waveEnergySmooth += (rawEnergy - waveEnergySmooth) * 0.07;
+        waveTime += state.isPlaying ? (0.016 + waveEnergySmooth * 0.016) : 0.007;
 
         if (initWaveWebGL(canvas)) {
           const gl = waveGl;
@@ -5003,15 +5016,16 @@
       const animRow = document.getElementById('ws-anim-row');
       if (animRow) animRow.innerHTML = WAVE_ANIM_STYLES.map(i => mkBtn('anim', i, state.waveAnimStyle === i.id)).join('');
     }
+    let waveMixDirty = false;
     document.getElementById('btn-wave-settings').addEventListener('click', (e) => {
-      e.stopPropagation(); haptic(10); renderWaveSettingsSheet(); openSpringSheet('wave-settings-modal');
+      e.stopPropagation(); waveMixDirty = false; haptic(10); renderWaveSettingsSheet(); openSpringSheet('wave-settings-modal');
     });
     document.getElementById('wave-settings-modal').addEventListener('click', (e) => {
       const b = e.target.closest('[data-ws-group]'); if (!b) return;
       const g = b.dataset.wsGroup, v = b.dataset.wsVal;
-      if (g === 'balance') { state.waveBalance = v; try { localStorage.setItem('elysion_wave_balance', v); } catch {} }
-      if (g === 'char') { state.waveChar = v; try { localStorage.setItem('elysion_wave_char', v); } catch {} }
-      if (g === 'vibe') { state.waveVibe = v; try { localStorage.setItem('elysion_wave_vibe', v); } catch {} }
+      if (g === 'balance') { state.waveBalance = v; waveMixDirty = true; try { localStorage.setItem('elysion_wave_balance', v); } catch {} }
+      if (g === 'char') { state.waveChar = v; waveMixDirty = true; try { localStorage.setItem('elysion_wave_char', v); } catch {} }
+      if (g === 'vibe') { state.waveVibe = v; waveMixDirty = true; try { localStorage.setItem('elysion_wave_vibe', v); } catch {} }
       if (g === 'anim') { state.waveAnimStyle = v; try { localStorage.setItem('elysion_wave_anim', v); } catch {} }
       haptic(8); renderWaveSettingsSheet();
       if (g !== 'anim') { cachedWaveMixIds = buildSmartWaveQueue(); }
@@ -5162,7 +5176,11 @@
     }
 
     document.getElementById('btn-wave-apply-play').addEventListener('click', () => {
-      closeSpringSheet('wave-settings-modal'); haptic(14); launchConfiguredWave(false);
+      closeSpringSheet('wave-settings-modal'); haptic(14);
+      const isWave = String(state.playContextLabel || '').toLowerCase().includes('волна');
+      if (waveMixDirty || !isWave || !state.currentTrackId) launchConfiguredWave(false);
+      else renderWaveView();
+      waveMixDirty = false;
     });
     (function wireWaveCoverSwipe() {
       const btn = document.getElementById('btn-wave-cover-open');
