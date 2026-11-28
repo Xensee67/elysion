@@ -752,7 +752,7 @@
       <div>
         <h2 class="text-base font-extrabold mb-2.5">Недавно слушал(а)</h2>
         <div id="profile-top-tracks-block" class="hidden mb-5"><h2 class="text-base font-extrabold mb-2.5">Топ-5 любимых треков</h2><div id="profile-top-tracks-list" class="space-y-2"></div></div>
-      <div id="profile-recent-list" class="space-y-2"></div>
+      
       </div>
     </section>
 
@@ -984,6 +984,16 @@
           <button id="btn-switch-account" class="py-2.5 px-3 rounded-2xl bg-rose-500/20 text-rose-200 border border-rose-400/25 text-xs font-bold">Сменить профиль</button>
         </div>
       </div>
+          <button id="btn-open-changelog" class="w-full glass-card rounded-3xl p-4 flex items-center justify-between active:scale-[0.99] transition">
+        <div class="flex items-center gap-3 text-left">
+          <div class="icon-badge"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg></div>
+          <div>
+            <div class="text-sm font-extrabold">История обновлений</div>
+            <div class="text-[11px] text-white/55">Elysion v2.6 · «Нативная мощь»</div>
+          </div>
+        </div>
+        <span class="px-2.5 py-1 rounded-full bg-white/10 text-[11px] font-extrabold text-pink-200">v2.6</span>
+      </button>
     </section>
 
     <!-- UNIFIED DOCKED SHELL -->
@@ -1371,6 +1381,21 @@
         <div id="ws-vibe-row" class="grid grid-cols-2 gap-2"></div>
       </div>
       <button id="btn-wave-apply-play" class="w-full py-3.5 rounded-2xl accent-grad text-xs font-extrabold text-white shadow-lg active:scale-95 transition">Запустить волну с этими настройками</button>
+    </div>
+  </div>
+
+  <!-- SPRING SHEET: CHANGELOG / ИСТОРИЯ ОБНОВЛЕНИЙ -->
+  <div id="changelog-modal" class="sheet-backdrop">
+    <div class="sheet-panel elysion-sheet space-y-3.5">
+      <div class="w-10 h-1 rounded-full bg-white/20 mx-auto"></div>
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 class="text-base font-extrabold">История обновлений</h3>
+          <p class="text-[11px] text-white/55">Летопись Elysion от v1.0 до v2.6</p>
+        </div>
+        <button data-close-sheet="changelog-modal" class="w-8 h-8 rounded-full bg-white/10 text-xs flex items-center justify-center">✕</button>
+      </div>
+      <div id="changelog-timeline-list" class="space-y-2.5 max-h-[64dvh] overflow-y-auto no-scrollbar pb-2"></div>
     </div>
   </div>
 
@@ -1930,7 +1955,7 @@
     }
 
     function closeAnyModal() {
-      for (const sid of ['elysion-dialog-modal', 'ms-playlist-modal', 'history-modal', 'wave-settings-modal', 'sort-modal', 'fx-modal', 'track-menu-modal', 'artist-picker-modal']) {
+      for (const sid of ['elysion-dialog-modal', 'changelog-modal', 'ms-playlist-modal', 'history-modal', 'wave-settings-modal', 'sort-modal', 'fx-modal', 'track-menu-modal', 'artist-picker-modal']) {
         const s = document.getElementById(sid);
         if (s && s.classList.contains('is-open')) { closeSpringSheet(sid); return true; }
       }
@@ -2900,9 +2925,7 @@
             <span class="text-[11px] font-bold text-pink-300/90 flex-shrink-0">${cnt}×</span>
           </div>`).join('');
       }
-      const recent = (getMyStats(u).recentIds || []).map(id => state.tracks.find(t => t.id === id)).filter(Boolean).slice(0, 8);
-      document.getElementById('profile-recent-list').innerHTML = recent.length ? recent.map(tr => buildTrackRowHtml(tr, 'all')).join('') : '<div class="text-xs text-white/45 py-4">Включи любой трек — история появится здесь</div>';
-    }
+          }
 
     function renderPartnerProfileView() {
       const p = getPartner(), pName = PROFILE_NAMES[p];
@@ -4048,6 +4071,7 @@
         if (bassVal) bassVal.textContent = `+${state.bassBoost} дБ`;
         try { localStorage.setItem('elysion_bass_boost', String(state.bassBoost)); } catch {}
         ensureAudioEq(); updateEqCurveSvg();
+        try { window.Capacitor?.Plugins?.ElysionMedia?.setNativeAudioFx?.({ bass: state.bassBoost }); } catch {}
       });
     }
     document.getElementById('fx-eq-grid').addEventListener('click', () => setTimeout(updateEqCurveSvg, 30));
@@ -4611,6 +4635,58 @@
         if (pill) setTimeout(() => pill.classList.remove('is-visible'), 220);
       }, { passive: true });
     })();
+
+
+    // =========================================================================
+    // V2.6: CHANGELOG TIMELINE (v1.0 -> v2.6) & ANDROID APP SHORTCUTS HANDLER
+    // =========================================================================
+    const ELYSION_CHANGELOG = [
+      { v: 'v2.6', name: 'Нативная мощь', desc: 'Виджет на рабочий стол ColorOS 17, растягиваемая адаптивная иконка, ярлыки App Shortcuts, умная Bluetooth-пауза, аппаратный звук Android и история обновлений.' },
+      { v: 'v2.5', name: 'Четыре облика', desc: '4 стиля плеера (Классика, Постер, Кино, Минимал + Текст), 7 цветовых акцентов, Радио по треку, Pull-to-Refresh, Топ-5 треков и Режим в дороге.' },
+      { v: 'v2.4', name: 'Ледяной движок', desc: 'Глубокая оптимизация GPU (ноль нагрева), виртуализация списков, мгновенный кэш текстов, алфавит и обновлённое меню ⋮.' },
+      { v: 'v2.3', name: 'Чистовая полировка', desc: 'Верхний защитный градиент под часами, плавный край капсул Волны и аудит слоёв.' },
+      { v: 'v2.2', name: 'Мгновенный отклик', desc: 'Фоновая предзагрузка следующего трека, линия прогресса в мини-плеере, режим «Выбрать», история по дням и липкая шапка плейлистов.' },
+      { v: 'v2.1', name: 'Живая физика', desc: '1:1 карусельный свайп мини-плеера, новая эргономика плеера с Повтором, настройка Нашей Волны и коллажи 2×2.' },
+      { v: 'v2.0', name: 'Новая эра', desc: 'Горизонтальный 3-колоночный плеер, Elysion Wrapped, Умная очередь 2.0, Crossfade, Эквалайзер 2.0 и авто-подборки.' },
+      { v: 'v1.9', name: 'Полное погружение', desc: 'Прозрачный статус-бар, плавная волна трека, сортировка, общий сдвиг текста и статус «Сейчас слушает партнёр».' },
+      { v: 'v1.8', name: 'Наши моменты', desc: 'Личные заметки к трекам, сохранение карточек цитат в Галерею и единые шторки.' },
+      { v: 'v1.7', name: 'Плавность и Цитаты', desc: '120 FPS фон плеера, рабочий эквалайзер, кадрирование фото и генератор карточек цитат.' },
+      { v: 'v1.6', name: 'Плеер 2.0 и Живая Волна', desc: 'Новый полноэкранный плеер, Canvas-волна, Live Alerts на OnePlus 15 и постоянная подпись APK.' },
+      { v: 'v1.5', name: 'Два профиля', desc: 'Облачные профили Ромы и Маши с баннерами, закреплённый трек дня, Плейлисты 2.0 и iPhone PWA.' },
+      { v: 'v1.4', name: 'Живые лица', desc: 'Автоподбор фото артистов, синхронизированные тексты песен и защита доступа бота.' },
+      { v: 'v1.3', name: 'Облачный поток', desc: 'Стабильный стриминг через Telegram и Cloudflare Worker, обложки и синхронизация базы.' },
+      { v: 'v1.2', name: 'Звук и Ритм', desc: 'Live Jam для совместного прослушивания, скорость Slowed / Speed Up, таймер сна и сборка первого APK.' },
+      { v: 'v1.1', name: 'Личное пространство', desc: 'Профили Ромы и Маши, первые общие плейлисты, поиск по коллекции и система бейджей пары.' },
+      { v: 'v1.0', name: 'Рождение Вселенной', desc: 'Запуск Elysion для двоих, облачная библиотека, общие лайки и первый плеер.' }
+    ];
+    document.getElementById('btn-open-changelog').addEventListener('click', () => {
+      document.getElementById('changelog-timeline-list').innerHTML = ELYSION_CHANGELOG.map((item, i) => `
+        <div class="rounded-2xl p-3.5 ${i === 0 ? 'bg-white/10 border border-pink-400/40' : 'bg-white/5 border border-white/5'}">
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded-full ${i === 0 ? 'accent-grad text-white' : 'bg-white/10 text-white/75'} text-[10px] font-extrabold">${item.v}</span>
+            <span class="text-xs font-extrabold text-white">«${item.name}»</span>
+          </div>
+          <p class="text-[11px] text-white/65 mt-1.5 leading-relaxed">${item.desc}</p>
+        </div>`).join('');
+      haptic(10); openSpringSheet('changelog-modal');
+    });
+
+    function runNativeShortcut(sc) {
+      if (!sc) return;
+      if (sc === 'wave') { if (state.tracks.length) launchConfiguredWave(); }
+      else if (sc === 'likes') { openPlaylistDetail('my-likes'); }
+      else if (sc === 'search') { navigateTo('search', true); setTimeout(() => document.getElementById('search-tab-input')?.focus(), 200); }
+      else if (sc === 'jam') { navigateTo('jam', true); }
+    }
+    if (window.Capacitor?.Plugins?.ElysionMedia?.addListener) {
+      window.Capacitor.Plugins.ElysionMedia.addListener('shortcutAction', (evt) => runNativeShortcut(evt?.shortcut));
+      setTimeout(async () => {
+        try {
+          const r = await window.Capacitor.Plugins.ElysionMedia.getPendingShortcut();
+          if (r?.shortcut) runNativeShortcut(r.shortcut);
+        } catch {}
+      }, 900);
+    }
 
     // Boot
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});

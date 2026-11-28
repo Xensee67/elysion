@@ -5,7 +5,11 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.media.AudioManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Build;
@@ -25,11 +29,19 @@ public class ElysionMediaService extends Service {
     private MediaSessionCompat mediaSession;
     private Bitmap cachedArtwork = null;
     private String cachedArtUrl = "";
+    private final BroadcastReceiver noisyReceiver = new BroadcastReceiver() {
+        @Override public void onReceive(Context ctx, Intent intent) {
+            if (AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(intent.getAction())) {
+                ElysionMediaPlugin.emitAction("pause");
+            }
+        }
+    };
 
     @Override
     public void onCreate() {
         super.onCreate();
         createChannel();
+        try { registerReceiver(noisyReceiver, new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY)); } catch (Exception ignored) {}
         mediaSession = new MediaSessionCompat(this, "ElysionMediaSession");
         mediaSession.setCallback(new MediaSessionCompat.Callback() {
             @Override public void onPlay() { ElysionMediaPlugin.emitAction("play"); }
@@ -114,6 +126,7 @@ public class ElysionMediaService extends Service {
             .setStyle(new MediaStyle().setMediaSession(mediaSession.getSessionToken()).setShowActionsInCompactView(0, 1, 2));
 
         startForeground(NOTIF_ID, nb.build());
+        ElysionWidgetProvider.updateAll(this, title, artist, isPlaying, cachedArtwork);
     }
 
     private PendingIntent servicePi(String action, int reqCode) {
@@ -131,6 +144,7 @@ public class ElysionMediaService extends Service {
         }
     }
 
-    @Override public void onDestroy() { if (mediaSession != null) mediaSession.release(); super.onDestroy(); }
+    @Override public void onDestroy() {
+        try { unregisterReceiver(noisyReceiver); } catch (Exception ignored) {} if (mediaSession != null) mediaSession.release(); super.onDestroy(); }
     @Override public IBinder onBind(Intent intent) { return null; }
 }

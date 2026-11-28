@@ -6,6 +6,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.media.audiofx.BassBoost;
 import android.util.Base64;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -20,6 +21,8 @@ import java.io.OutputStream;
 @CapacitorPlugin(name = "ElysionMedia")
 public class ElysionMediaPlugin extends Plugin {
     private static ElysionMediaPlugin instance;
+    private static String pendingShortcut = "";
+    private BassBoost nativeBassBoost = null;
 
     @Override public void load() { instance = this; }
 
@@ -121,5 +124,41 @@ public class ElysionMediaPlugin extends Plugin {
             } catch (Exception ignored) {}
             call.resolve();
         });
+    }
+
+    public static void emitShortcut(String action) {
+        if (action == null || action.isEmpty()) return;
+        pendingShortcut = action;
+        if (instance != null) {
+            JSObject data = new JSObject();
+            data.put("shortcut", action);
+            instance.notifyListeners("shortcutAction", data);
+        }
+    }
+
+    @PluginMethod
+    public void getPendingShortcut(PluginCall call) {
+        JSObject ret = new JSObject();
+        ret.put("shortcut", pendingShortcut != null ? pendingShortcut : "");
+        pendingShortcut = "";
+        call.resolve(ret);
+    }
+
+    @PluginMethod
+    public void setNativeAudioFx(PluginCall call) {
+        int bassDb = call.getInt("bass", 0);
+        try {
+            if (nativeBassBoost == null) {
+                nativeBassBoost = new BassBoost(0, 0);
+            }
+            if (bassDb > 0) {
+                short strength = (short) Math.min(1000, bassDb * 100);
+                nativeBassBoost.setStrength(strength);
+                nativeBassBoost.setEnabled(true);
+            } else {
+                nativeBassBoost.setEnabled(false);
+            }
+        } catch (Exception ignored) {}
+        call.resolve();
     }
 }
