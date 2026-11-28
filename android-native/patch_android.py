@@ -599,8 +599,8 @@ if os.path.exists('android-native/elysion.keystore'):
 
 bg = 'android/app/build.gradle'
 s = open(bg).read()
-s = re.sub(r'versionCode\s+\d+', 'versionCode 29', s)
-s = re.sub(r'versionName\s+"[^"]+"', 'versionName "2.9"', s)
+s = re.sub(r'versionCode\s+\d+', 'versionCode 30', s)
+s = re.sub(r'versionName\s+"[^"]+"', 'versionName "3.0"', s)
 if 'androidx.media:media:' not in s:
     s = s.replace('dependencies {', 'dependencies {\n    implementation "androidx.media:media:1.7.0"')
 if 'elysion.keystore' not in s and os.path.exists('android/app/elysion.keystore'):
