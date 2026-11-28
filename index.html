@@ -103,12 +103,12 @@
     /* Seamless Full-Bleed WebGL Wave & Edge-to-Edge Profile Hero (True Alpha Mask Dissolve) */
     #view-wave { padding-top: 0 !important; padding-left: 0 !important; padding-right: 0 !important; }
     #wave-canvas {
-      position: absolute; top: 0; left: 0; right: 0; width: 100%; height: 500px;
+      position: absolute; top: 0; left: 0; right: 0; width: 100%; height: 68vh; min-height: 540px; max-height: 700px;
       pointer-events: none; z-index: 0;
-      mask-image: linear-gradient(to bottom, black 0%, black 52%, transparent 100%);
-      -webkit-mask-image: linear-gradient(to bottom, black 0%, black 52%, transparent 100%);
+      mask-image: linear-gradient(to bottom, black 0%, black 60%, transparent 100%);
+      -webkit-mask-image: linear-gradient(to bottom, black 0%, black 60%, transparent 100%);
     }
-    .wave-hero-stage { position: relative; z-index: 2; padding: calc(var(--safe-top) + 14px) 18px 18px 18px; display: flex; flex-direction: column; justify-content: space-between; }
+    .wave-hero-stage { position: relative; z-index: 2; min-height: 52vh; padding: calc(var(--safe-top) + 16px) 18px 22px 18px; display: flex; flex-direction: column; justify-content: space-between; }
     .wave-cover-glow { box-shadow: 0 18px 40px rgba(0,0,0,0.45); transition: transform 240ms cubic-bezier(0.22,1,0.36,1); }
     .profile-edge-hero { position: relative; margin: calc(-12px - var(--safe-top)) -16px 0 -16px; min-height: calc(255px + var(--safe-top)); overflow: hidden; }
     @media (min-width: 768px) { .profile-edge-hero { margin: 0; border-radius: 28px; min-height: 260px; } }
@@ -655,7 +655,7 @@
           </button>
         </header>
 
-        <div class="flex flex-col items-center justify-center my-7">
+        <div class="flex flex-col items-center justify-center my-10">
           <button id="btn-wave-cover-open" class="w-48 h-48 rounded-[30px] overflow-hidden border border-white/20 wave-cover-glow active:scale-95 bg-black/30 select-none" style="touch-action: pan-y;">
             <img id="wave-now-cover" src="" alt="" class="w-full h-full object-cover pointer-events-none" />
           </button>
@@ -701,20 +701,6 @@
             </div>
             <span class="text-[11px] font-bold text-white/80 text-center leading-tight">Забытые хиты</span>
           </button>
-        </div>
-
-        <div class="glass-card rounded-3xl p-4 space-y-3">
-          <div class="flex items-center justify-between gap-2">
-            <div class="min-w-0">
-              <div class="text-xs font-extrabold text-white truncate">Дальше в потоке</div>
-              <div id="wave-pool-meta" class="text-[11px] text-white/50 truncate mt-0.5">Готовим умный микс</div>
-            </div>
-            <div class="flex items-center gap-1.5 flex-shrink-0">
-              <button id="btn-wave-not-now" class="px-3 py-1.5 rounded-full bg-white/10 text-[11px] font-bold text-white/85 whitespace-nowrap active:scale-95 transition">Не сейчас</button>
-              <button id="btn-wave-remix" class="px-3 py-1.5 rounded-full accent-grad text-[11px] font-bold text-white whitespace-nowrap active:scale-95 transition">Обновить</button>
-            </div>
-          </div>
-          <div id="wave-upnext-list" class="space-y-2"></div>
         </div>
       </div>
     </section>
@@ -1904,20 +1890,77 @@
     }
 
     // V2.9 WEBGL GLSL AUDIO-REACTIVE WAVE ENGINE (3 Styles: Silk / Aurora / Pulsar + 2D Fallback + 0% GPU Sleep)
-    let lastWaveDrawTs = 0, waveGl = null, waveGlProg = null, waveGlUniforms = null, waveGlFailed = false, waveEnergySmooth = 0.15, waveFreqBuf = null;
+    let lastWaveDrawTs = 0, waveGl = null, waveGlProg = null, waveGlUniforms = null, waveGlFailed = false;
+    let waveEnergySmooth = 0.18, waveAgcFloor = 0.04, waveAgcCeil = 0.45, waveFreqBuf = null;
+    let waveCanvasCssW = 0, waveCanvasCssH = 0, waveResizeObs = null, waveCtxLostTimer = null, waveCtxRecoverTries = 0;
+
+    function attachWaveResizeObserver(canvas) {
+      if (!canvas) return;
+      if (waveResizeObs) { try { waveResizeObs.disconnect(); } catch {} }
+      const syncSize = (w, h) => {
+        if (w > 0 && h > 0) { waveCanvasCssW = w; waveCanvasCssH = h; }
+      };
+      const initRect = canvas.getBoundingClientRect();
+      syncSize(initRect.width || window.innerWidth, initRect.height || Math.max(540, Math.round(window.innerHeight * 0.68)));
+      if (typeof ResizeObserver !== 'undefined') {
+        waveResizeObs = new ResizeObserver((entries) => {
+          for (const ent of entries) {
+            const cr = ent.contentRect;
+            syncSize(cr.width, cr.height);
+          }
+        });
+        waveResizeObs.observe(canvas);
+      }
+    }
+
+    function recreateWaveCanvas() {
+      const oldC = document.getElementById('wave-canvas');
+      if (!oldC || !oldC.parentNode || waveCtxRecoverTries >= 3) return null;
+      waveCtxRecoverTries++;
+      const fresh = document.createElement('canvas');
+      fresh.id = 'wave-canvas';
+      oldC.parentNode.replaceChild(fresh, oldC);
+      waveGl = null; waveGlProg = null; waveGlUniforms = null; waveGlFailed = false;
+      attachWaveResizeObserver(fresh);
+      return fresh;
+    }
+
     function initWaveWebGL(canvas) {
       if (waveGl || waveGlFailed) return !!waveGl;
       try {
         if (!canvas.dataset.glBound) {
           canvas.dataset.glBound = '1';
-          canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); waveGl = null; waveGlProg = null; waveGlUniforms = null; }, false);
-          canvas.addEventListener('webglcontextrestored', () => { waveGlFailed = false; }, false);
+          attachWaveResizeObserver(canvas);
+          canvas.addEventListener('webglcontextlost', (e) => {
+            e.preventDefault();
+            waveGl = null; waveGlProg = null; waveGlUniforms = null;
+            clearTimeout(waveCtxLostTimer);
+            waveCtxLostTimer = setTimeout(() => {
+              if (!document.hidden && !waveGl) recreateWaveCanvas();
+            }, 1000);
+          }, false);
+          canvas.addEventListener('webglcontextrestored', () => {
+            clearTimeout(waveCtxLostTimer);
+            waveCtxRecoverTries = 0;
+            waveGlFailed = false;
+          }, false);
         }
-        const gl = canvas.getContext('webgl', { alpha: false, antialias: false });
+        const gl = canvas.getContext('webgl', {
+          alpha: true,
+          antialias: false,
+          depth: false,
+          stencil: false,
+          premultipliedAlpha: true,
+          powerPreference: 'default'
+        });
         if (!gl) { waveGlFailed = true; return false; }
         const vsSrc = `attribute vec2 a_pos; void main() { gl_Position = vec4(a_pos, 0.0, 1.0); }`;
         const fsSrc = `
-          precision highp float;
+          #ifdef GL_FRAGMENT_PRECISION_HIGH
+            precision highp float;
+          #else
+            precision mediump float;
+          #endif
           uniform vec2 u_res;
           uniform float u_time;
           uniform float u_energy;
@@ -1926,70 +1969,106 @@
           uniform vec3 u_c2;
           uniform vec3 u_c3;
 
+          // Precision-safe non-trig hash (Dave Hoskins) for sRGB TPDF anti-banding dithering
+          float hash12(vec2 p) {
+            vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+            p3 += dot(p3, p3.yzx + 33.33);
+            return fract((p3.x + p3.y) * p3.z);
+          }
+
           vec3 liftColor(vec3 c, float minL) {
             float l = max(max(c.r, c.g), c.b);
             return l < minL ? mix(c, vec3(0.58, 0.36, 0.94), 0.32) + vec3(minL - l) : c;
+          }
+
+          // Analytical vertical aurora curtain: sharp glowing lower rim + tall shimmering upward rays
+          float auroraCurtain(vec2 p, float t, float yBase, float freq, float speed, float rayFreq, float phase) {
+            float x = p.x * 1.15;
+            float ridge = yBase
+              + 0.16 * sin(x * freq + t * speed + phase)
+              + 0.09 * cos(x * (freq * 1.85) - t * (speed * 0.72) + phase * 1.7)
+              + 0.04 * sin(x * (freq * 3.1) + t * (speed * 1.15));
+            float dy = p.y - ridge;
+            // Asymmetric vertical fade: crisp bottom edge, tall soft upward veil
+            float vShape = dy >= 0.0 ? exp(-dy * 2.15) : exp(dy * 11.5);
+            // Shimmering vertical light columns dancing along the curtain
+            float warpX = x * rayFreq + sin(x * 2.3 + t * 0.42 + phase) * 2.4 + t * (speed * 1.25);
+            float rays = 0.42 + 0.58 * pow(0.5 + 0.5 * sin(warpX), 1.55);
+            float fineRays = 0.68 + 0.32 * sin(x * (rayFreq * 2.1) - t * 0.85 + phase);
+            return vShape * rays * fineRays;
           }
 
           void main() {
             vec2 uv = gl_FragCoord.xy / u_res;
             vec2 p = uv * 2.0 - 1.0;
             p.x *= u_res.x / max(1.0, u_res.y);
-            vec3 bg = vec3(0.028, 0.016, 0.062);
-            vec3 c1 = liftColor(u_c1, 0.44);
-            vec3 c2 = liftColor(u_c2, 0.54);
-            vec3 c3 = liftColor(u_c3, 0.34);
+            vec3 bg = vec3(0.026, 0.015, 0.058);
+            vec3 c1 = liftColor(u_c1, 0.45);
+            vec3 c2 = liftColor(u_c2, 0.55);
+            vec3 c3 = liftColor(u_c3, 0.36);
             float t = u_time;
             float e = u_energy;
             vec3 col = bg;
 
             if (u_style == 0) {
-              // 1. Жидкий шёлк — гладкие многослойные шёлковые складки (C-infinity smooth, 0 артефактов!)
-              vec2 q = p * 1.35;
+              // 1. Жидкий шёлк — глубокие бархатные складки + мягкий шёлковый блик (60 FPS)
+              vec2 q = p * 1.32;
               for (int i = 1; i <= 4; i++) {
                 float fi = float(i);
-                q.x += 0.42 / fi * sin(fi * 2.2 * q.y + t * (0.55 + fi * 0.08) + fi * 1.4);
-                q.y += 0.42 / fi * cos(fi * 2.0 * q.x - t * (0.48 + fi * 0.07) + fi * 2.1);
+                q.x += 0.40 / fi * sin(fi * 2.15 * q.y + t * (0.50 + fi * 0.07) + fi * 1.35);
+                q.y += 0.40 / fi * cos(fi * 1.95 * q.x - t * (0.44 + fi * 0.06) + fi * 2.05);
               }
-              float fold1 = 0.5 + 0.5 * sin(q.x * 2.6 + q.y * 1.9);
-              float fold2 = 0.5 + 0.5 * cos(q.x * 1.8 - q.y * 2.5 + t * 0.35);
-              float ridge = pow(fold1 * 0.65 + fold2 * 0.35, 2.2);
-              float sheen = pow(fold1, 5.0);
-              vec3 silk = mix(c3 * 0.28, c1 * 0.96, smoothstep(0.15, 0.82, fold2));
-              silk = mix(silk, c2 * 1.15, smoothstep(0.28, 0.92, ridge));
-              silk += (c2 * 0.55 + vec3(0.32)) * sheen * (0.35 + e * 0.38);
-              col = mix(bg, silk, 0.92);
+              float fold1 = 0.5 + 0.5 * sin(q.x * 2.55 + q.y * 1.85);
+              float fold2 = 0.5 + 0.5 * cos(q.x * 1.75 - q.y * 2.45 + t * 0.32);
+              float ridge = pow(fold1 * 0.62 + fold2 * 0.38, 2.0);
+              float sheen = pow(fold1 * fold2, 3.2);
+              vec3 silk = mix(c3 * 0.22, c1 * 0.96, smoothstep(0.14, 0.84, fold2));
+              silk = mix(silk, c2 * 1.16, smoothstep(0.26, 0.90, ridge));
+              silk += (c2 * 0.60 + vec3(0.36)) * sheen * (0.42 + e * 0.45);
+              col = mix(bg, silk, 0.94);
             } else if (u_style == 1) {
-              // 2. Северное сияние — плавные вертикально-диагональные световые шлейфы
-              float x = p.x * 1.1;
-              float sway1 = 0.24 * sin(x * 1.9 + t * 0.52) + 0.12 * cos(x * 3.4 - t * 0.38) + 0.22;
-              float sway2 = 0.26 * cos(x * 1.5 - t * 0.44) + 0.14 * sin(x * 2.8 + t * 0.46) - 0.06;
-              float sway3 = 0.18 * sin(x * 2.6 - t * 0.60) + 0.38;
-              float rays1 = 0.62 + 0.38 * sin(x * 7.5 + sin(x * 2.5 + t * 0.4) * 2.2 + t * 0.75);
-              float rays2 = 0.62 + 0.38 * cos(x * 10.5 - cos(x * 2.1 - t * 0.35) * 2.0 - t * 0.62);
-              float c1Band = exp(-abs(p.y - sway1) * 2.1) * rays1;
-              float c2Band = exp(-abs(p.y - sway2) * 2.5) * rays2;
-              float c3Band = exp(-abs(p.y - sway3) * 3.2) * (0.55 + 0.45 * sin(x * 5.0 + t * 0.8));
-              vec3 colA = mix(c1 * 1.12, c2 * 1.22, smoothstep(-0.85, 0.85, p.x));
-              vec3 colB = mix(c2, vec3(0.32, 0.88, 0.98), 0.46);
-              vec3 colC = mix(c1, vec3(0.75, 0.45, 1.0), 0.45);
-              col = bg + (colA * c1Band * 0.95 + colB * c2Band * 0.78 + colC * c3Band * 0.55) * (0.85 + e * 0.42);
+              // 2. Северное сияние — вертикальные переливающиеся шторы света с яркой нижней кромкой
+              float cur1 = auroraCurtain(p, t, -0.22, 1.7, 0.48, 7.2, 0.0);
+              float cur2 = auroraCurtain(p, t,  0.04, 1.3, -0.38, 9.6, 2.1);
+              float cur3 = auroraCurtain(p, t,  0.26, 2.1, 0.55, 5.8, 4.3);
+
+              // Vertical hue shift inside curtains: luminous cyan/accent2 rim fading into violet/accent1 sky
+              float hGrad = clamp(uv.y * 1.15, 0.0, 1.0);
+              vec3 rimA = mix(c2 * 1.25, vec3(0.28, 0.92, 0.96), 0.38);
+              vec3 topA = mix(c1 * 1.10, vec3(0.68, 0.34, 0.98), 0.36);
+              vec3 col1 = mix(rimA, topA, hGrad);
+              vec3 col2 = mix(c1 * 1.18, c2 * 1.24, smoothstep(-0.85, 0.85, p.x));
+              vec3 col3 = mix(c3 * 1.25, rimA, 0.55);
+
+              // Soft atmospheric sky glow + crisp vertical curtains
+              vec3 skyGlow = mix(c3, c1, 0.5) * exp(-abs(p.y - 0.1) * 1.8) * 0.22;
+              float boost = 0.86 + e * 0.46;
+              col = bg + skyGlow + (col1 * cur1 * 0.92 + col2 * cur2 * 0.72 + col3 * cur3 * 0.48) * boost;
             } else {
-              // 3. Жидкий пульсар — идеально гладкие светящиеся кольца энергии в 60 FPS
-              vec2 c = p - vec2(0.0, 0.06);
+              // 3. Жидкий пульсар — 2D SDF-кольца + двойное экспоненциальное свечение ядра
+              vec2 c = p - vec2(0.0, 0.04);
               float d = length(c);
               float ang = atan(c.y, c.x);
-              float organic = 0.036 * sin(ang * 3.0 + t * 0.85) + 0.022 * cos(ang * 5.0 - t * 0.65);
-              float r1 = fract((d + organic) * 2.5 - t * 0.36);
-              float r2 = fract((d - organic * 0.75) * 1.7 - t * 0.24 + 0.45);
-              float ring1 = exp(-pow((r1 - 0.5) * 6.0, 2.0));
-              float ring2 = exp(-pow((r2 - 0.5) * 5.0, 2.0));
-              float env = smoothstep(0.18, 0.42, d) * exp(-max(0.0, d - 0.44) * 1.7);
-              vec3 rCol = mix(c1 * 1.15, c2 * 1.25, 0.5 + 0.5 * sin(ang * 2.0 + t * 0.55));
-              vec3 glow = mix(c1, c2, 0.5) * exp(-d * 2.1) * (0.38 + e * 0.26);
-              col = bg + glow + rCol * (ring1 * 0.88 + ring2 * 0.50) * env * (0.88 + e * 0.42);
+              float organic = 0.032 * sin(ang * 3.0 + t * 0.82) + 0.020 * cos(ang * 5.0 - t * 0.62);
+              float r1 = fract((d + organic) * 2.4 - t * 0.34);
+              float r2 = fract((d - organic * 0.75) * 1.65 - t * 0.22 + 0.45);
+              float ring1 = exp(-pow((r1 - 0.5) * 6.4, 2.0));
+              float ring2 = exp(-pow((r2 - 0.5) * 5.2, 2.0));
+              float env = smoothstep(0.16, 0.40, d) * exp(-max(0.0, d - 0.42) * 1.65);
+              vec3 rCol = mix(c1 * 1.15, c2 * 1.26, 0.5 + 0.5 * sin(ang * 2.0 + t * 0.52));
+              // Single-pass dual-exponential core glow (hot core + soft atmospheric halo)
+              float dualGlow = exp(-d * 3.2) * 0.52 + exp(-d * 11.0) * 0.38;
+              vec3 glow = mix(c1, c2, 0.55) * dualGlow * (0.82 + e * 0.45);
+              col = bg + glow + rCol * (ring1 * 0.90 + ring2 * 0.52) * env * (0.86 + e * 0.48);
             }
-            gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
+
+            // Final sRGB TPDF anti-banding dithering with pure black/white protection
+            vec3 outCol = clamp(col, 0.0, 1.0);
+            float r1 = hash12(gl_FragCoord.xy + fract(t * 7.13));
+            float r2 = hash12(gl_FragCoord.xy * 1.17 + 19.31 - fract(t * 5.71));
+            vec3 dither = vec3((r1 + r2 - 1.0) / 255.0);
+            vec3 edgeMask = step(vec3(0.5 / 255.0), outCol) * step(outCol, vec3(1.0 - 0.5 / 255.0));
+            gl_FragColor = vec4(clamp(outCol + dither * edgeMask, 0.0, 1.0), 1.0);
           }
         `;
         const compile = (type, src) => {
@@ -2027,7 +2106,15 @@
         return false;
       }
     }
-    function sampleWaveAudioEnergy() {
+
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && state.activeView === 'wave' && !waveGl && !waveGlFailed) {
+        const c = document.getElementById('wave-canvas');
+        if (c) initWaveWebGL(c);
+      }
+    });
+
+    function sampleWaveAudioEnergy(dt) {
       if (!state.isPlaying) return 0.12;
       let measured = 0;
       try {
@@ -2036,15 +2123,21 @@
           analyserNode.getByteFrequencyData(waveFreqBuf);
           let sum = 0; const bins = Math.min(14, waveFreqBuf.length);
           for (let i = 0; i < bins; i++) sum += waveFreqBuf[i];
-          measured = (sum / (bins * 255));
+          measured = sum / (bins * 255);
         }
       } catch {}
       // Smooth procedural beat fallback for iOS Safari when AnalyserNode returns 0 on cross-origin streams
       if (measured < 0.02) {
-        measured = 0.28 + 0.22 * Math.sin(waveTime * 2.6) + 0.14 * Math.sin(waveTime * 5.1);
+        return Math.min(1.0, Math.max(0.14, 0.30 + 0.20 * Math.sin(waveTime * 2.5) + 0.12 * Math.sin(waveTime * 4.9)));
       }
-      return Math.min(1.0, Math.max(0.12, measured));
+      // Adaptive Gain Control (AGC): slow floor/ceiling adaptation so quiet intros and loud drops both map cleanly
+      waveAgcFloor += (Math.min(measured, waveAgcFloor + 0.02) - waveAgcFloor) * Math.min(1, dt * 0.4);
+      waveAgcCeil += (Math.max(measured, waveAgcCeil - 0.04) - waveAgcCeil) * Math.min(1, dt * 0.8);
+      const span = Math.max(0.18, waveAgcCeil - waveAgcFloor);
+      const norm = (measured - waveAgcFloor) / span;
+      return Math.min(1.0, Math.max(0.12, norm));
     }
+
     function animateSharedWaveCanvas(nowTs = 0) {
       if (document.hidden || state.playerOpen || state.activeView !== 'wave') {
         lastWaveDrawTs = 0;
@@ -2055,19 +2148,24 @@
       lastWaveDrawTs = nowTs;
       const canvas = document.getElementById('wave-canvas');
       if (canvas && state.activeView === 'wave' && !state.playerOpen && !document.hidden) {
-        const rect = canvas.getBoundingClientRect();
-        const scale = Math.min(1.0, (window.devicePixelRatio || 1) * 0.55);
-        const w = Math.max(240, Math.floor(rect.width * scale));
-        const h = Math.max(240, Math.floor(rect.height * scale));
+        if (!waveCanvasCssW || !waveCanvasCssH) attachWaveResizeObserver(canvas);
+        const cssW = waveCanvasCssW || window.innerWidth || 412;
+        const cssH = waveCanvasCssH || Math.max(540, Math.round((window.innerHeight || 840) * 0.68));
+        const dpr = Math.min(1.5, window.devicePixelRatio || 1);
+        const scale = dpr * 0.68;
+        const w = Math.max(240, Math.floor(cssW * scale));
+        const h = Math.max(240, Math.floor(cssH * scale));
         if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
 
         const target = getTargetWaveColors();
         const lerpF = Math.min(1, dt * 3.8);
         for (let i = 0; i < 3; i++) for (let c = 0; c < 3; c++) waveCurColors[i][c] += (target[i][c] - waveCurColors[i][c]) * lerpF;
 
-        const rawEnergy = sampleWaveAudioEnergy();
-        waveEnergySmooth += (rawEnergy - waveEnergySmooth) * Math.min(1, dt * 4.5);
-        waveTime += dt * (state.isPlaying ? (0.85 + waveEnergySmooth * 0.75) : 0.35);
+        // Asymmetric EMA (fast attack on bass hit, smooth slow release) + bounded monotonic phase
+        const rawEnergy = sampleWaveAudioEnergy(dt);
+        const emaRate = rawEnergy > waveEnergySmooth ? 12.0 : 3.2;
+        waveEnergySmooth += (rawEnergy - waveEnergySmooth) * Math.min(1, dt * emaRate);
+        waveTime = (waveTime + dt * (state.isPlaying ? (0.82 + waveEnergySmooth * 0.72) : 0.34)) % 628.3185;
 
         if (initWaveWebGL(canvas)) {
           const gl = waveGl;
@@ -2108,8 +2206,6 @@
     }
     requestAnimationFrame(animateSharedWaveCanvas);
 
-    // iOS Safari PWA Top Rubber-Band Guard (v2.8: finds nearest genuinely scrollable ancestor so nested lists never jam!)
-    let iosTouchStartY = 0;
     function findNearestScrollable(el) {
       let cur = el;
       while (cur && cur !== document.body && cur !== document.documentElement) {
@@ -5146,26 +5242,7 @@
       const pLbl = document.getElementById('wave-scene-partner-lbl');
       if (pLbl) pLbl.textContent = `Вкус ${getPartner() === 'he' ? 'Ромы' : 'Маши'}`;
 
-      const bLbl = (WAVE_BALANCES.find(x => x.id === state.waveBalance) || WAVE_BALANCES[0]).label;
-
       if (!cachedWaveMixIds.length && state.tracks.length) cachedWaveMixIds = buildSmartWaveQueue();
-      const qIds = (String(state.playContextLabel || '').toLowerCase().includes('волна') && state.playbackQueueIds?.length) ? state.playbackQueueIds : cachedWaveMixIds;
-      const curIdx = Math.max(-1, qIds.indexOf(state.currentTrackId));
-      const upNext = qIds.slice(curIdx + 1, curIdx + 4).map(id => state.tracks.find(t => t.id === id)).filter(Boolean);
-      const meta = document.getElementById('wave-pool-meta');
-      if (meta) meta.textContent = `В потоке ${qIds.length} тр. · ${bLbl}`;
-      const listEl = document.getElementById('wave-upnext-list');
-      if (listEl) {
-        listEl.innerHTML = upNext.length ? upNext.map((t, i) => `
-          <div data-wave-pick="${t.id}" class="flex items-center gap-3 p-2 rounded-2xl bg-white/5 active:scale-[0.99] transition cursor-pointer">
-            <img src="${t.cover || FALLBACK_COVERS[0]}" alt="" class="w-10 h-10 rounded-xl object-cover flex-shrink-0" />
-            <div class="min-w-0 flex-1">
-              <div class="text-xs font-bold text-white truncate">${escapeHtml(t.title)}</div>
-              <div class="text-[11px] text-white/55 truncate">${escapeHtml(t.artist)}</div>
-            </div>
-            <span class="text-[10px] font-bold text-white/35 pr-1">${i + 1}</span>
-          </div>`).join('') : '<div class="text-xs text-white/45 py-2">Нажми «Обновить», чтобы собрать новый поток</div>';
-      }
     }
 
     document.getElementById('btn-wave-apply-play').addEventListener('click', () => {
@@ -5215,16 +5292,7 @@
     document.getElementById('btn-wave-like').addEventListener('click', () => {
       const tr = getCurrentTrack(); if (tr) { haptic(12); toggleLike(tr.id); renderWaveView(); }
     });
-    document.getElementById('btn-wave-remix').addEventListener('click', () => {
-      haptic(12); launchConfiguredWave(false); showToast('Поток обновлён');
-    });
-    document.getElementById('btn-wave-not-now').addEventListener('click', () => {
-      const cur = getCurrentTrack();
-      if (cur) { state.waveSkippedIds[cur.id] = (state.waveSkippedIds[cur.id] || 0) + 2; }
-      haptic(10);
-      if (String(state.playContextLabel || '').toLowerCase().includes('волна')) nextTrack(); else launchConfiguredWave(false);
-      showToast('Убрали из текущего потока');
-    });
+
     document.getElementById('view-wave').addEventListener('click', (e) => {
       const cyc = e.target.closest('[data-wave-cycle]');
       if (cyc) {
@@ -5254,14 +5322,7 @@
         haptic(14); launchConfiguredWave(false);
         return;
       }
-      const pick = e.target.closest('[data-wave-pick]');
-      if (pick) {
-        const tid = pick.dataset.wavePick;
-        const qIds = cachedWaveMixIds.length ? cachedWaveMixIds : buildSmartWaveQueue();
-        const bLbl = (WAVE_BALANCES.find(x => x.id === state.waveBalance) || WAVE_BALANCES[0]).label;
-        playTrack(tid, true, false, qIds, `Наша волна · ${bLbl}`);
-        renderWaveView();
-      }
+
     });
 
     // Profile 2.0 Bento-Lux Interactions (Stats Pills, Partner Bento Jam Button, 1-Tap Pinned Track Picker)
