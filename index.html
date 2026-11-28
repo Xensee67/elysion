@@ -411,7 +411,7 @@
     }
     #pl-sticky-header.is-stuck {
       background: rgba(16, 11, 28, 0.72);
-      backdrop-filter: blur(24px) saturate(1.4); -webkit-backdrop-filter: blur(24px) saturate(1.4);
+      backdrop-filter: blur(12px) saturate(1.2); -webkit-backdrop-filter: blur(12px) saturate(1.2);
       border-bottom-color: rgba(255,255,255,0.10);
     }
     #pl-sticky-center { opacity: 0; transform: translateY(6px); transition: opacity 220ms ease, transform 220ms ease; pointer-events: none; }
@@ -456,32 +456,7 @@
       box-shadow: 0 -10px 44px rgba(0,0,0,0.68), inset 0 1px 0 rgba(255,255,255,0.12);
     }
 
-    /* v2.5: Fullscreen Backdrop Layer for Poster & Cinema Player Styles */
-    #player-style-bg { position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; display: none; }
-    #player-style-bg img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s ease; }
-    #player-style-bg-overlay { position: absolute; inset: 0; }
 
-    /* Style 1: ПОСТЕР (Full-Bleed Top 58% fading smoothly into accent gradient) */
-    #player-sheet[data-pstyle="poster"] #player-style-bg { display: block; height: 60%; }
-    #player-sheet[data-pstyle="poster"] #player-style-bg-overlay {
-      background: linear-gradient(to bottom, rgba(8,5,16,0.34) 0%, rgba(8,5,16,0.08) 38%, color-mix(in srgb, var(--mesh-a) 30%, #080510) 86%, #080510 100%);
-    }
-    #player-sheet[data-pstyle="poster"] #player-cover-stage { opacity: 0; pointer-events: none; }
-
-    /* Style 2: КИНО (100% Full-Screen Cover Canvas edge-to-edge) */
-    #player-sheet[data-pstyle="cinema"] #player-style-bg { display: block; height: 100%; }
-    #player-sheet[data-pstyle="cinema"] #player-style-bg-overlay {
-      background: linear-gradient(to bottom, rgba(8,5,16,0.38) 0%, rgba(8,5,16,0.14) 35%, color-mix(in srgb, var(--accent-1) 36%, rgba(8,5,16,0.84)) 72%, rgba(8,5,16,0.96) 100%);
-    }
-    #player-sheet[data-pstyle="cinema"] #player-cover-stage { opacity: 0; pointer-events: none; }
-
-    /* Style 3: МИНИМАЛ + ТЕКСТ (Compact Cover + 3 Live Synced Lyric Lines in Center) */
-    #player-minimal-stage { display: none; }
-    #player-sheet[data-pstyle="minimal"] #player-cover-stage { display: none !important; }
-    #player-sheet[data-pstyle="minimal"] #player-title-block { display: none !important; }
-    #player-sheet[data-pstyle="minimal"] #player-minimal-stage { display: flex; }
-    #player-sheet[data-pstyle="minimal"][data-pmode="lyrics"] #player-minimal-stage,
-    #player-sheet[data-pstyle="minimal"][data-pmode="queue"] #player-minimal-stage { display: none !important; }
 
     /* v2.5: Car / Night Minimal Mode (bigger transport buttons, dimmed chrome) */
     #player-sheet.is-car-mode #btn-play-main { width: 82px; height: 82px; }
@@ -1173,10 +1148,7 @@
           <div><div class="text-sm font-bold">Внешний вид</div><div class="text-[11px] text-white/50">Акцентная палитра интерфейса</div></div>
         </div>
         <div id="palette-switcher" class="grid grid-cols-2 gap-2"></div>
-        <div class="pt-3 border-t border-white/10">
-          <div class="text-xs font-bold mb-2">Стиль экрана плеера</div>
-          <div id="player-style-switcher" class="grid grid-cols-2 gap-2"></div>
-        </div>
+
         <div class="pt-3 border-t border-white/10">
           <div class="text-xs font-bold mb-1">Живой фон плеера (WebGL)</div>
           <div class="text-[11px] text-white/45 mb-2">Адаптация под цвета обложки трека в 60 FPS</div>
@@ -1301,10 +1273,7 @@
   <section id="player-sheet" aria-label="Плеер">
     <div class="player-mesh-layer" aria-hidden="true"></div>
     <canvas id="player-mesh-canvas" aria-hidden="true"></canvas>
-    <div id="player-style-bg" aria-hidden="true">
-      <img id="player-style-bg-img" src="" alt="" />
-      <div id="player-style-bg-overlay"></div>
-    </div>
+
 
     <div class="player-inner">
       <!-- Clean Header: Collapse + Context Subtitle -->
@@ -1339,22 +1308,7 @@
         </div>
       </div>
 
-      <!-- Mode 1b: Minimal + Live Synced Lyrics Style -->
-      <div id="player-minimal-stage" class="flex-1 flex-col justify-between min-h-0 py-3 px-1">
-        <div class="flex items-center gap-3.5">
-          <img id="min-cover-img" src="" alt="" class="w-16 h-16 rounded-2xl object-cover border border-white/15 shadow-lg flex-shrink-0" />
-          <div class="min-w-0 flex-1">
-            <div id="min-title" class="text-xl font-extrabold tracking-tight truncate">—</div>
-            <button id="btn-min-artist" class="text-sm text-white/70 truncate max-w-full block text-left mt-0.5">—</button>
-          </div>
-          <button id="btn-min-like" class="w-10 h-10 rounded-full glass-soft flex items-center justify-center active:scale-90 transition flex-shrink-0"></button>
-        </div>
-        <div id="min-live-lyrics" class="flex-1 flex flex-col items-center justify-center text-center gap-3 px-2 my-4">
-          <div id="min-lyr-prev" class="text-base font-bold text-white/35 line-clamp-2 transition-all duration-300"></div>
-          <div id="min-lyr-cur" class="text-xl font-extrabold text-white leading-snug drop-shadow-[0_0_20px_rgba(255,255,255,0.28)] line-clamp-3 transition-all duration-300">...</div>
-          <div id="min-lyr-next" class="text-base font-bold text-white/35 line-clamp-2 transition-all duration-300"></div>
-        </div>
-      </div>
+
 
       <!-- Mode 2: Smooth Embedded Lyrics Stage -->
       <div id="player-lyrics-stage" class="hidden flex-1 flex flex-col min-h-0 py-2">
@@ -2281,10 +2235,17 @@
       return Math.min(1.0, Math.max(0.12, norm));
     }
 
+    let waveRafHandle = 0;
+    function ensureWaveLoop() {
+      if (!waveRafHandle && !document.hidden && !state.playerOpen && state.activeView === 'wave') {
+        lastWaveDrawTs = 0;
+        waveRafHandle = requestAnimationFrame(animateSharedWaveCanvas);
+      }
+    }
     function animateSharedWaveCanvas(nowTs = 0) {
+      waveRafHandle = 0;
       if (document.hidden || state.playerOpen || state.activeView !== 'wave') {
         lastWaveDrawTs = 0;
-        requestAnimationFrame(animateSharedWaveCanvas);
         return;
       }
       const dt = lastWaveDrawTs ? Math.min(0.05, Math.max(0.004, (nowTs - lastWaveDrawTs) / 1000)) : 0.016;
@@ -2345,9 +2306,9 @@
           }
         }
       }
-      requestAnimationFrame(animateSharedWaveCanvas);
+      waveRafHandle = requestAnimationFrame(animateSharedWaveCanvas);
     }
-    requestAnimationFrame(animateSharedWaveCanvas);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) ensureWaveLoop(); });
 
     function findNearestScrollable(el) {
       let cur = el;
@@ -2787,7 +2748,7 @@
       else { box.innerHTML = lyr.plain.split('\n').map(l => `<div class="text-lg font-semibold text-white/75 py-1.5">${escapeHtml(l)}</div>`).join(''); }
     }
     function syncActiveLyricLine(curSec, instant = false) {
-      if ((state.playerMode !== 'lyrics' && state.playerStyle !== 'minimal') || !state.currentLyrics?.synced?.length) return;
+      if (state.playerMode !== 'lyrics' || !state.currentLyrics?.synced?.length) return;
       const tr = getCurrentTrack();
       const offset = tr ? getTrackLyricOffset(tr.id) : 0;
       const adjSec = curSec + 0.15 + offset;
@@ -2952,8 +2913,8 @@
       }
       playTrack(list[(idx + 1) % list.length].id, true);
     }
-    function prevTrack() {
-      if ((audioEl.currentTime || 0) > 3) { audioEl.currentTime = 0; syncNativeAndroidMedia(getCurrentTrack(), true); return; }
+    function prevTrack(forcePrev = false) {
+      if (!forcePrev && (audioEl.currentTime || 0) > 3) { audioEl.currentTime = 0; syncNativeAndroidMedia(getCurrentTrack(), true); return; }
       const list = getActiveList(); if (!list.length) return;
       const idx = list.findIndex(t => t.id === state.currentTrackId);
       playTrack(list[(idx - 1 + list.length) % list.length].id, true);
@@ -3639,7 +3600,7 @@
     function renderPlayerView() {
       const { prev, cur, next } = getNeighborTracks(); if (!cur) return;
       document.getElementById('player-cover-img').src = cur.cover;
-      const bgImg = document.getElementById('player-style-bg-img'); if (bgImg) bgImg.src = cur.cover;
+      
       const mCov = document.getElementById('min-cover-img'); if (mCov) mCov.src = cur.cover;
       const mTtl = document.getElementById('min-title'); if (mTtl) mTtl.textContent = cur.title;
       const mArt = document.getElementById('btn-min-artist'); if (mArt) mArt.textContent = cur.artist;
@@ -4075,7 +4036,7 @@
     document.getElementById('btn-back-from-settings').addEventListener('click', () => navigateTo('profile', false));
     document.getElementById('btn-close-player').addEventListener('click', closePlayerSheet);
     document.getElementById('btn-play-main').addEventListener('click', togglePlay);
-    document.getElementById('btn-prev').addEventListener('click', prevTrack);
+    document.getElementById('btn-prev').addEventListener('click', () => prevTrack(false));
     document.getElementById('btn-next').addEventListener('click', nextTrack);
     document.getElementById('btn-mini-play').addEventListener('click', (e) => { e.stopPropagation(); togglePlay(); });
     document.getElementById('btn-mini-next').addEventListener('click', (e) => { e.stopPropagation(); nextTrack(); });
@@ -4246,7 +4207,7 @@
             if (targetTr) document.getElementById('player-cover-img').src = targetTr.cover;
             carouselTrack.style.transform = 'translate3d(0, 0, 0)';
             void carouselTrack.offsetWidth;
-            if (goNext) nextTrack(); else prevTrack();
+            if (goNext) nextTrack(); else prevTrack(true);
             carouselTrack.classList.remove('is-dragging');
             carouselBusy = false;
           }, 290);
@@ -4264,7 +4225,7 @@
     miniCard.addEventListener('touchend', (e) => {
       if (!getPrefs().coverSwipe) return;
       const dx = e.changedTouches[0].clientX - mStartX;
-      if (Math.abs(dx) > 60) { e.stopPropagation(); haptic(10); if (dx < 0) nextTrack(); else prevTrack(); }
+      if (Math.abs(dx) > 60) { e.stopPropagation(); haptic(10); if (dx < 0) nextTrack(); else prevTrack(true); }
     }, { passive: true });
 
     // Audio & Native Live Alerts (FIXED: reads evt.position in ms!)
@@ -5568,7 +5529,7 @@
         if (locked === 'h' && Math.abs(dx) > 46) {
           suppressClickUntil = Date.now() + 280;
           haptic(12);
-          if (dx < 0) nextTrack(); else prevTrack();
+          if (dx < 0) nextTrack(); else prevTrack(true);
           renderWaveView();
         }
         dx = 0; locked = null;
@@ -5844,37 +5805,10 @@
     // =========================================================================
     // V2.5: 4 PLAYER STYLES, CAR MODE, TRACK RADIO, PULL-TO-REFRESH & CHUNKS
     // =========================================================================
-    const PLAYER_STYLES = [
-      { id: 'classic', name: 'Классика', desc: 'Квадратная обложка' },
-      { id: 'poster', name: 'Постер', desc: 'Обложка на пол-экрана' },
-      { id: 'cinema', name: 'Кино', desc: 'Обложка во весь экран' },
-      { id: 'minimal', name: 'Минимал + Текст', desc: '3 живые строки текста' }
-    ];
     function applyPlayerStyle() {
       const sheet = document.getElementById('player-sheet');
-      if (!sheet) return;
-      sheet.dataset.pstyle = state.playerStyle || 'classic';
-      sheet.classList.toggle('is-car-mode', !!state.carMode);
+      if (sheet) sheet.classList.toggle('is-car-mode', !!state.carMode);
     }
-    function renderPlayerStyleSwitcher() {
-      const box = document.getElementById('player-style-switcher'); if (!box) return;
-      box.innerHTML = PLAYER_STYLES.map(s => `
-        <button data-pstyle-pick="${s.id}" class="p-3 rounded-2xl text-left border transition ${state.playerStyle === s.id ? 'bg-white/15 border-pink-400/55' : 'bg-white/5 border-white/10'}">
-          <div class="text-xs font-extrabold">${s.name}</div>
-          <div class="text-[10px] text-white/55 mt-0.5">${s.desc}</div>
-        </button>`).join('');
-    }
-    const origRenderSettings = renderSettingsView;
-    renderSettingsView = function() { origRenderSettings(); renderPlayerStyleSwitcher(); };
-    document.getElementById('player-style-switcher').addEventListener('click', (e) => {
-      const b = e.target.closest('[data-pstyle-pick]'); if (!b) return;
-      state.playerStyle = b.dataset.pstylePick;
-      try { localStorage.setItem('elysion_player_style', state.playerStyle); } catch {}
-      haptic(10); applyPlayerStyle(); renderPlayerStyleSwitcher();
-      if (state.playerStyle === 'minimal' && getCurrentTrack()) loadLyricsForTrack(getCurrentTrack());
-    });
-    document.getElementById('btn-min-artist').addEventListener('click', () => { const tr = getCurrentTrack(); if (tr) handleArtistClick(tr.artist); });
-    document.getElementById('btn-min-like').addEventListener('click', () => { const tr = getCurrentTrack(); if (tr) toggleLike(tr.id); });
 
     // Car / Night Mode toggle
     const carBtn = document.getElementById('toggle-car-mode');
@@ -6032,40 +5966,77 @@
     ];
     state.playerBgStyle = localStorage.getItem('elysion_player_bg_style') || 'mesh';
 
-    let pMeshGl = null, pMeshProg = null, pMeshU = null, pMeshFailed = false;
+    let pMeshGl = null, pMeshProg = null, pMeshU = null, pMeshFailed = false, pMeshRafHandle = 0;
     let pMeshTime = 0, pMeshLastTs = 0, pMeshCssW = 0, pMeshCssH = 0, pMeshResizeObs = null;
     let pMeshLostTimer = null, pMeshRecoverTries = 0, pMeshLastCoverUrl = '', pMeshDimCur = 1.0;
     let pMeshCur = [[164, 62, 118], [98, 44, 152], [44, 52, 126], [198, 78, 134]];
     let pMeshTarget = [[164, 62, 118], [98, 44, 152], [44, 52, 126], [198, 78, 134]];
     const pMeshColorCache = {};
 
-    function boostCoverColor(r, g, b) {
-      // Boost saturation (vibrance) and enforce readable OLED luminance window (0.20..0.48) so white text NEVER blows out!
-      let rn = r / 255, gn = g / 255, bn = b / 255;
-      const maxC = Math.max(rn, gn, bn), minC = Math.min(rn, gn, bn);
-      const avg = (rn + gn + bn) / 3;
-      const sat = maxC > 0 ? (maxC - minC) / maxC : 0;
-      const satBoost = sat < 0.35 ? 1.55 : 1.28;
-      rn = Math.max(0, Math.min(1, avg + (rn - avg) * satBoost));
-      gn = Math.max(0, Math.min(1, avg + (gn - avg) * satBoost));
-      bn = Math.max(0, Math.min(1, avg + (bn - avg) * satBoost));
-      const lum = 0.299 * rn + 0.587 * gn + 0.114 * bn;
-      if (lum < 0.20) {
-        const pal = PALETTES.find(p => p.id === getPrefs().palette) || PALETTES[0];
-        rn = Math.min(0.48, rn * 0.55 + (pal.rgb1[0] / 255) * 0.42);
-        gn = Math.min(0.48, gn * 0.55 + (pal.rgb1[1] / 255) * 0.42);
-        bn = Math.min(0.48, bn * 0.55 + (pal.rgb1[2] / 255) * 0.42);
-      } else if (lum > 0.48) {
-        const k = 0.46 / lum;
-        rn *= k; gn *= k; bn *= k;
+    function rgbToHsl(r, g, b) {
+      r /= 255; g /= 255; b /= 255;
+      const max = Math.max(r, g, b), min = Math.min(r, g, b);
+      let h = 0, s = 0, l = (max + min) / 2;
+      if (max !== min) {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        if (max === r) h = (g - b) / d + (g < b ? 6 : 0);
+        else if (max === g) h = (b - r) / d + 2;
+        else h = (r - g) / d + 4;
+        h /= 6;
       }
-      return [Math.round(rn * 255), Math.round(gn * 255), Math.round(bn * 255)];
+      return [h, s, l];
+    }
+    function hslToRgb(h, s, l) {
+      h = ((h % 1) + 1) % 1;
+      const hue2rgb = (p, q, t) => {
+        t = ((t % 1) + 1) % 1;
+        if (t < 1/6) return p + (q - p) * 6 * t;
+        if (t < 1/2) return q;
+        if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+        return p;
+      };
+      let r, g, b;
+      if (s === 0) { r = g = b = l; }
+      else {
+        const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+        const p = 2 * l - q;
+        r = hue2rgb(p, q, h + 1/3); g = hue2rgb(p, q, h); b = hue2rgb(p, q, h - 1/3);
+      }
+      return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+    }
+
+    function boostCoverColor(r, g, b) {
+      const [h, s, l] = rgbToHsl(r, g, b);
+      const pal = PALETTES.find(p => p.id === getPrefs().palette) || PALETTES[0];
+      const [ph] = rgbToHsl(...pal.rgb1);
+      // If cover is nearly monochrome/gray, infuse subtle accent hue so backgrounds stay rich, never muddy gray
+      const useH = s < 0.08 ? ph : h;
+      const useS = Math.min(0.88, Math.max(0.42, s * 1.45));
+      const useL = Math.min(0.46, Math.max(0.24, l));
+      return hslToRgb(useH, useS, useL);
+    }
+
+    function buildContrasting4Palette(rawCols) {
+      // Derive 4 distinct, harmonious yet contrasting tones (warm highlight, hue-shifted complement, deep velvet, midnight anchor)
+      const base0 = boostCoverColor(...rawCols[0]);
+      const base1 = boostCoverColor(...(rawCols[1] || rawCols[0]));
+      const [h0, s0, l0] = rgbToHsl(...base0);
+      const [h1, s1, l1] = rgbToHsl(...base1);
+      const c0 = hslToRgb(h0, Math.min(0.90, s0 * 1.12), Math.min(0.48, Math.max(0.32, l0 * 1.12))); // Luminous primary
+      const hueDiff = Math.abs(h1 - h0);
+      const hShift = (hueDiff < 0.09 || hueDiff > 0.91) ? (h0 + 0.14) : h1;
+      const c1 = hslToRgb(hShift, Math.min(0.88, Math.max(0.50, s1)), Math.min(0.44, Math.max(0.26, l1))); // Contrasting companion
+      const c2 = hslToRgb(h0 - 0.10, Math.min(0.75, s0 * 0.9), 0.16); // Deep velvet valley
+      const c3 = hslToRgb(hShift + 0.08, Math.min(0.92, s0 * 1.15), 0.42); // Bright accent orb
+      return [c0, c1, c2, c3];
     }
 
     function applyPlayerBgStyle() {
       const sheet = document.getElementById('player-sheet');
       if (!sheet) return;
       sheet.classList.toggle('bg-static', state.playerBgStyle === 'static');
+      if (state.playerBgStyle !== 'static') ensurePlayerMeshLoop();
     }
 
     function renderPlayerBgSwitcher() {
@@ -6093,13 +6064,7 @@
       pMeshLastCoverUrl = url;
       if (pMeshColorCache[url]) { pMeshTarget = pMeshColorCache[url].map(c => c.slice()); return; }
       const pal = PALETTES.find(p => p.id === getPrefs().palette) || PALETTES[0];
-      const fallback4 = [
-        boostCoverColor(...pal.rgb1),
-        boostCoverColor(...pal.rgb2),
-        boostCoverColor(...pal.rgb3),
-        boostCoverColor((pal.rgb1[0]+pal.rgb2[0])/2, (pal.rgb1[1]+pal.rgb2[1])/2, (pal.rgb1[2]+pal.rgb2[2])/2)
-      ];
-      pMeshTarget = fallback4.map(c => c.slice());
+      pMeshTarget = buildContrasting4Palette([pal.rgb1, pal.rgb2]).map(c => c.slice());
       try {
         const img = new Image();
         img.crossOrigin = 'anonymous';
@@ -6109,15 +6074,21 @@
             const ctx = c.getContext('2d', { willReadFrequently: true });
             ctx.drawImage(img, 0, 0, 16, 16);
             const data = ctx.getImageData(0, 0, 16, 16).data;
-            const quads = [[0,0,8,8], [8,0,16,8], [0,8,8,16], [8,8,16,16]];
-            const cols = quads.map(([x0,y0,x1,y1]) => {
-              let r=0, g=0, b=0, n=0;
-              for (let y=y0; y<y1; y++) for (let x=x0; x<x1; x++) {
-                const idx = (y * 16 + x) * 4;
-                r += data[idx]; g += data[idx+1]; b += data[idx+2]; n++;
+            // Pick 2 most saturated distinct pixels/clusters from top & bottom halves
+            const pickBest = (y0, y1) => {
+              let best = [120, 60, 150], bestScore = -1, sr = 0, sg = 0, sb = 0, n = 0;
+              for (let y = y0; y < y1; y++) for (let x = 0; x < 16; x++) {
+                const i = (y * 16 + x) * 4;
+                const r = data[i], g = data[i+1], b = data[i+2];
+                sr += r; sg += g; sb += b; n++;
+                const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+                const lum = 0.299*r + 0.587*g + 0.114*b;
+                const score = (mx - mn) * (lum > 28 && lum < 235 ? 1.5 : 0.4);
+                if (score > bestScore) { bestScore = score; best = [r, g, b]; }
               }
-              return boostCoverColor(r / n, g / n, b / n);
-            });
+              return bestScore > 22 ? best : [sr/n, sg/n, sb/n];
+            };
+            const cols = buildContrasting4Palette([pickBest(0, 8), pickBest(8, 16)]);
             pMeshColorCache[url] = cols;
             if (pMeshLastCoverUrl === url) pMeshTarget = cols.map(c => c.slice());
           } catch {}
@@ -6213,22 +6184,23 @@
             vec3 col = base;
 
             if (u_mode == 0) {
-              // 0: Cloud Mesh 2.0 — Rich, luminous 4-color orbiting clouds with crisp depth & contrast
-              vec2 m0 = vec2(-0.42 + 0.36 * sin(t * 0.36),  0.46 + 0.30 * cos(t * 0.28));
-              vec2 m1 = vec2( 0.44 + 0.34 * cos(t * 0.32),  0.30 + 0.34 * sin(t * 0.25));
-              vec2 m2 = vec2(-0.36 + 0.38 * cos(t * 0.29), -0.44 + 0.32 * sin(t * 0.34));
-              vec2 m3 = vec2( 0.40 + 0.35 * sin(t * 0.27), -0.36 + 0.30 * cos(t * 0.31));
-              float w0 = exp(-dot(p - m0, p - m0) * 1.45);
-              float w1 = exp(-dot(p - m1, p - m1) * 1.35);
-              float w2 = exp(-dot(p - m2, p - m2) * 1.45);
-              float w3 = exp(-dot(p - m3, p - m3) * 1.35);
-              float wSum = w0 + w1 + w2 + w3 + 0.16;
-              vec3 blend = (u_c0 * w0 * 1.35 + u_c1 * w1 * 1.30 + u_c2 * w2 * 1.25 + u_c3 * w3 * 1.35 + base * 0.16) / wSum;
-              // Soft diagonal light ribbon for unmistakable Apple Music depth
-              float ribbon = exp(-pow((p.x * 0.7 + p.y * 0.55 - 0.18 * sin(t * 0.42)), 2.0) * 3.4);
-              blend += mix(u_c0, u_c3, 0.5) * ribbon * 0.22;
-              float vig = 1.0 - 0.28 * dot(uv - 0.5, uv - 0.5);
-              col = clampSafe(mix(base, blend, 0.96) * vig, 0.52);
+              // 0: Cloud Mesh 3.0 (Concept 1) — High-contrast 4-color Apple Music clouds + dark midnight valley
+              vec2 m0 = vec2(-0.44 + 0.26 * sin(t * 0.32),  0.48 + 0.22 * cos(t * 0.25));
+              vec2 m1 = vec2( 0.46 + 0.24 * cos(t * 0.28),  0.22 + 0.26 * sin(t * 0.23));
+              vec2 m2 = vec2(-0.34 + 0.28 * cos(t * 0.26), -0.52 + 0.24 * sin(t * 0.30));
+              vec2 m3 = vec2( 0.42 + 0.25 * sin(t * 0.24), -0.42 + 0.22 * cos(t * 0.27));
+              float w0 = exp(-dot(p - m0, p - m0) * 2.15);
+              float w1 = exp(-dot(p - m1, p - m1) * 2.05);
+              float w2 = exp(-dot(p - m2, p - m2) * 2.25);
+              float w3 = exp(-dot(p - m3, p - m3) * 2.10);
+              vec3 clouds = u_c0 * w0 * 1.18 + u_c1 * w1 * 1.12 + u_c2 * w2 * 0.95 + u_c3 * w3 * 1.15;
+              // Soft sweeping diagonal veil separating warm & cool zones
+              float valley = smoothstep(-0.35, 0.45, p.x * 0.65 - p.y * 0.48 + 0.16 * sin(t * 0.35));
+              vec3 deepBg = mix(vec3(0.022, 0.014, 0.042), u_c2 * 0.55, 0.45);
+              vec3 mixed = deepBg + clouds * mix(0.95, 0.62, valley);
+              float sweep = exp(-pow(p.x * 0.72 + p.y * 0.45 + 0.12 * cos(t * 0.38), 2.0) * 4.5);
+              mixed += mix(u_c0, u_c3, 0.55) * sweep * 0.26;
+              col = clampSafe(mixed, 0.54);
             } else if (u_mode == 1) {
               // 1: Liquid Silk Mesh 2.0 — Deep, smooth diagonal silk folds with velvet shadows & sheen
               vec2 q = p * 1.18;
@@ -6245,18 +6217,20 @@
               silk += u_c3 * pow(f1 * f2, 2.8) * 0.34;
               col = clampSafe(mix(base, silk, 0.92), 0.50);
             } else {
-              // 2: OLED Ambient Bloom Halo 2.0 — Vibrant non-clipping halo around the cover, ZERO white blowout!
-              vec2 c = p - vec2(0.0, 0.16);
-              float a = t * 0.40;
-              vec2 h0 = c - vec2( 0.24 * cos(a),       0.18 * sin(a));
-              vec2 h1 = c - vec2(-0.24 * cos(a + 2.1), 0.20 * sin(a + 2.1));
-              vec2 h2 = c - vec2( 0.20 * sin(a * 0.85), -0.22 * cos(a * 0.85));
-              vec3 s0 = u_c0 * exp(-dot(h0, h0) * 2.4) * 0.92;
-              vec3 s1 = u_c1 * exp(-dot(h1, h1) * 2.5) * 0.86;
-              vec3 s2 = u_c3 * exp(-dot(h2, h2) * 2.6) * 0.82;
-              // Soft screen blend prevents additive >1.0 white blowout even on pure white covers!
-              vec3 halo = 1.0 - (1.0 - clamp(s0, 0.0, 0.72)) * (1.0 - clamp(s1, 0.0, 0.72)) * (1.0 - clamp(s2, 0.0, 0.72));
-              col = clampSafe(vec3(0.008, 0.006, 0.016) + halo * 0.92, 0.50);
+              // 2: OLED Ambient Bloom Halo 3.0 (Concept 3) — Pure #000 OLED top/bottom edges + tight luminous cover aura
+              vec2 c = p - vec2(0.0, 0.22);
+              float distC = length(c * vec2(1.05, 1.18));
+              // Strict OLED edge envelope: pure black at top/bottom, glowing strictly around the cover square
+              float coverMask = smoothstep(0.92, 0.22, distC);
+              float a = t * 0.36;
+              vec2 h0 = c - vec2(-0.26 * cos(a),       0.18 * sin(a));
+              vec2 h1 = c - vec2( 0.28 * cos(a + 2.0), 0.20 * sin(a + 2.0));
+              vec2 h2 = c - vec2( 0.16 * sin(a * 0.8), -0.26 * cos(a * 0.8));
+              vec3 s0 = u_c0 * exp(-dot(h0, h0) * 5.2) * 1.15;
+              vec3 s1 = u_c1 * exp(-dot(h1, h1) * 5.4) * 1.05;
+              vec3 s2 = u_c3 * exp(-dot(h2, h2) * 5.6) * 0.98;
+              vec3 halo = 1.0 - (1.0 - clamp(s0, 0.0, 0.76)) * (1.0 - clamp(s1, 0.0, 0.76)) * (1.0 - clamp(s2, 0.0, 0.76));
+              col = clampSafe(halo * coverMask * 1.05, 0.52);
             }
 
             // Smooth auto-dim when Lyrics screen is open so white lyrics stay razor sharp
@@ -6300,10 +6274,16 @@
       } catch { pMeshFailed = true; return false; }
     }
 
+    function ensurePlayerMeshLoop() {
+      if (!pMeshRafHandle && !document.hidden && state.playerOpen && state.playerBgStyle !== 'static') {
+        pMeshLastTs = 0;
+        pMeshRafHandle = requestAnimationFrame(animatePlayerMeshCanvas);
+      }
+    }
     function animatePlayerMeshCanvas(nowTs = 0) {
+      pMeshRafHandle = 0;
       if (document.hidden || !state.playerOpen || state.playerBgStyle === 'static') {
         pMeshLastTs = 0;
-        requestAnimationFrame(animatePlayerMeshCanvas);
         return;
       }
       const dt = pMeshLastTs ? Math.min(0.05, Math.max(0.004, (nowTs - pMeshLastTs) / 1000)) : 0.016;
@@ -6339,9 +6319,15 @@
           gl.drawArrays(gl.TRIANGLES, 0, 6);
         }
       }
-      requestAnimationFrame(animatePlayerMeshCanvas);
+      pMeshRafHandle = requestAnimationFrame(animatePlayerMeshCanvas);
     }
-    requestAnimationFrame(animatePlayerMeshCanvas);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) ensurePlayerMeshLoop(); });
+    const origOpenPlayerV31 = openPlayerSheet;
+    openPlayerSheet = function(...args) { const r = origOpenPlayerV31.apply(this, args); ensurePlayerMeshLoop(); return r; };
+    const origClosePlayerV31 = closePlayerSheet;
+    closePlayerSheet = function(...args) { const r = origClosePlayerV31.apply(this, args); ensureWaveLoop(); return r; };
+    const origNavV31 = navigateTo;
+    navigateTo = function(...args) { const r = origNavV31.apply(this, args); ensureWaveLoop(); return r; };
 
     // === DESKTOP 3-COLUMN SYNC, MOUSE CONTROLS & INTERACTIVE SYNCED LYRICS ===
     let dpActiveTab = 'now', dpLastLyricIdx = -1;
