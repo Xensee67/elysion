@@ -28,12 +28,12 @@ jobs:
           npx cap sync android
       - name: Apply Elysion icons & Native MediaSession with Seek
         run: python3 android-native/patch_android.py
-      - name: Build Elysion v3.0 APK
+      - name: Build Elysion v3.1 APK
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug
       - uses: actions/upload-artifact@v4
         with:
-          name: Elysion-v3.0-OnePlus15-APK
+          name: Elysion-v3.1-OnePlus15-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
