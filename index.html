@@ -2326,7 +2326,7 @@
           artist: track.artist || '',
           artwork: track.cover && track.cover.startsWith('http') ? track.cover : '',
           isPlaying: !!state.isPlaying,
-          isLiked: !!isLikedByMe(track),
+          isLiked: !!(getUser() === 'he' ? track.likedHe : track.likedShe),
           duration: Math.round(durSec * 1000),
           position: Math.round(posSec * 1000)
         });
