@@ -26,6 +26,13 @@ public class ElysionWidgetHelper {
     private static boolean lastPlaying = false;
     private static boolean lastLiked = false;
     private static Bitmap lastArt = null;
+    private static String lastWidgetSignature = "";
+    private static Bitmap cachedArtRef = null;
+    private static Bitmap cachedCompactBg = null;
+    private static Bitmap cachedLargeBg = null;
+    private static Bitmap cachedCompactCover = null;
+    private static Bitmap cachedLargeCover = null;
+    private static Bitmap cachedSquareCover = null;
 
     public static void handleAction(Context context, String act) {
         if (ACTION_WIDGET_PREV.equals(act)) {
@@ -42,11 +49,26 @@ public class ElysionWidgetHelper {
     }
 
     public static void updateAll(Context context, String title, String artist, boolean playing, boolean liked, Bitmap art) {
-        lastTitle = (title != null && !title.isEmpty()) ? title : "Elysion";
-        lastArtist = (artist != null && !artist.isEmpty()) ? artist : "Наша музыка вдвоём";
+        String normTitle = (title != null && !title.isEmpty()) ? title : "Elysion";
+        String normArtist = (artist != null && !artist.isEmpty()) ? artist : "Наша музыка вдвоём";
+        Bitmap effectiveArt = (art != null) ? art : lastArt;
+        int artId = (effectiveArt != null) ? System.identityHashCode(effectiveArt) : 0;
+        String sig = normTitle + "|" + normArtist + "|" + playing + "|" + liked + "|" + artId;
+        if (sig.equals(lastWidgetSignature)) return;
+        lastWidgetSignature = sig;
+        lastTitle = normTitle;
+        lastArtist = normArtist;
         lastPlaying = playing;
         lastLiked = liked;
-        if (art != null) lastArt = art;
+        if (art != null && art != cachedArtRef) {
+            lastArt = art;
+            cachedArtRef = art;
+            cachedCompactBg = makeAdaptiveBgBitmap(art, 520, 150, 44);
+            cachedLargeBg = makeAdaptiveBgBitmap(art, 520, 290, 48);
+            cachedCompactCover = makeRoundedBitmap(art, 144, 28);
+            cachedLargeCover = makeRoundedBitmap(art, 180, 34);
+            cachedSquareCover = makeRoundedBitmap(art, 320, 48);
+        }
         refreshAllProviders(context);
     }
 
@@ -73,12 +95,14 @@ public class ElysionWidgetHelper {
 
     public static RemoteViews buildCompactViews(Context context) {
         RemoteViews rv = new RemoteViews(context.getPackageName(), R.layout.elysion_widget);
-        rv.setImageViewBitmap(R.id.widget_bg_img, makeAdaptiveBgBitmap(lastArt, 520, 150, 44));
+        if (cachedCompactBg == null) cachedCompactBg = makeAdaptiveBgBitmap(lastArt, 520, 150, 44);
+        rv.setImageViewBitmap(R.id.widget_bg_img, cachedCompactBg);
         rv.setTextViewText(R.id.widget_title, lastTitle);
         rv.setTextViewText(R.id.widget_artist, lastArtist);
         rv.setImageViewResource(R.id.widget_btn_play, lastPlaying ? R.drawable.ic_w_pause : R.drawable.ic_w_play);
         if (lastArt != null) {
-            rv.setImageViewBitmap(R.id.widget_cover, makeRoundedBitmap(lastArt, 144, 28));
+            if (cachedCompactCover == null) cachedCompactCover = makeRoundedBitmap(lastArt, 144, 28);
+            rv.setImageViewBitmap(R.id.widget_cover, cachedCompactCover);
         } else {
             rv.setImageViewResource(R.id.widget_cover, R.mipmap.ic_launcher);
         }
@@ -91,13 +115,15 @@ public class ElysionWidgetHelper {
 
     public static RemoteViews buildLargeViews(Context context) {
         RemoteViews rv = new RemoteViews(context.getPackageName(), R.layout.elysion_widget_large);
-        rv.setImageViewBitmap(R.id.widget_bg_img, makeAdaptiveBgBitmap(lastArt, 520, 290, 48));
+        if (cachedLargeBg == null) cachedLargeBg = makeAdaptiveBgBitmap(lastArt, 520, 290, 48);
+        rv.setImageViewBitmap(R.id.widget_bg_img, cachedLargeBg);
         rv.setTextViewText(R.id.widget_title, lastTitle);
         rv.setTextViewText(R.id.widget_artist, lastArtist);
         rv.setImageViewResource(R.id.widget_btn_play, lastPlaying ? R.drawable.ic_w_pause : R.drawable.ic_w_play);
         rv.setImageViewResource(R.id.widget_btn_like, lastLiked ? R.drawable.ic_w_heart_filled : R.drawable.ic_w_heart_outline);
         if (lastArt != null) {
-            rv.setImageViewBitmap(R.id.widget_cover, makeRoundedBitmap(lastArt, 180, 34));
+            if (cachedLargeCover == null) cachedLargeCover = makeRoundedBitmap(lastArt, 180, 34);
+            rv.setImageViewBitmap(R.id.widget_cover, cachedLargeCover);
         } else {
             rv.setImageViewResource(R.id.widget_cover, R.mipmap.ic_launcher);
         }
@@ -116,7 +142,8 @@ public class ElysionWidgetHelper {
         rv.setTextViewText(R.id.widget_artist, lastArtist);
         rv.setImageViewResource(R.id.widget_btn_play, lastPlaying ? R.drawable.ic_w_pause : R.drawable.ic_w_play);
         if (lastArt != null) {
-            rv.setImageViewBitmap(R.id.widget_cover, makeRoundedBitmap(lastArt, 320, 48));
+            if (cachedSquareCover == null) cachedSquareCover = makeRoundedBitmap(lastArt, 320, 48);
+            rv.setImageViewBitmap(R.id.widget_cover, cachedSquareCover);
         } else {
             rv.setImageViewBitmap(R.id.widget_cover, makeAdaptiveBgBitmap(null, 320, 320, 48));
         }

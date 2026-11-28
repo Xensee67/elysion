@@ -1028,10 +1028,10 @@
           <div class="icon-badge"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg></div>
           <div>
             <div class="text-sm font-extrabold">История обновлений</div>
-            <div class="text-[11px] text-white/55">Elysion v2.7 · «Живой эфир»</div>
+            <div class="text-[11px] text-white/55">Elysion v2.8 · «Непрерывный поток»</div>
           </div>
         </div>
-        <span class="px-2.5 py-1 rounded-full bg-white/10 text-[11px] font-extrabold text-pink-200">v2.7</span>
+        <span class="px-2.5 py-1 rounded-full bg-white/10 text-[11px] font-extrabold text-pink-200">v2.8</span>
       </button>
     </section>
 
@@ -1444,7 +1444,7 @@
       <div class="flex items-center justify-between">
         <div>
           <h3 class="text-base font-extrabold">История обновлений</h3>
-          <p class="text-[11px] text-white/55">Летопись Elysion от v1.0 до v2.7</p>
+          <p class="text-[11px] text-white/55">Летопись Elysion от v1.0 до v2.8</p>
         </div>
         <button data-close-sheet="changelog-modal" class="w-8 h-8 rounded-full bg-white/10 text-xs flex items-center justify-center">✕</button>
       </div>
@@ -1835,17 +1835,27 @@
     }
     requestAnimationFrame(animateSharedWaveCanvas);
 
-    // iOS Safari PWA Top Rubber-Band Guard
+    // iOS Safari PWA Top Rubber-Band Guard (v2.8: finds nearest genuinely scrollable ancestor so nested lists never jam!)
     let iosTouchStartY = 0;
+    function findNearestScrollable(el) {
+      let cur = el;
+      while (cur && cur !== document.body && cur !== document.documentElement) {
+        if (cur.nodeType === 1) {
+          const st = window.getComputedStyle(cur);
+          const oy = st.overflowY;
+          if ((oy === 'auto' || oy === 'scroll') && cur.scrollHeight > cur.clientHeight + 1) return cur;
+        }
+        cur = cur.parentElement;
+      }
+      return null;
+    }
     document.addEventListener('touchstart', (e) => { iosTouchStartY = e.touches[0]?.clientY || 0; }, { passive: true });
     document.addEventListener('touchmove', (e) => {
-      const pane = e.target.closest('.app-scroll-pane, .lyrics-scroll, #pl-edit-tracks-list, #pl-add-tracks-list, #queue-list, #cover-candidates, #quote-lines-picker, .sheet-panel');
-      if (!pane) {
-        if (!e.target.closest('#player-sheet') && !e.target.closest('#waveform-scrubber') && !e.target.closest('input[type="range"]')) e.preventDefault();
-        return;
-      }
+      if (e.target.closest('#player-sheet, #mini-player, #waveform-scrubber, input[type="range"]')) return;
+      const pane = findNearestScrollable(e.target);
+      if (!pane) { e.preventDefault(); return; }
       const dy = (e.touches[0]?.clientY || 0) - iosTouchStartY;
-      if (pane.scrollTop <= 0 && dy > 0) e.preventDefault();
+      if (pane.scrollTop <= 0 && dy > 0 && !pane.classList.contains('app-scroll-pane')) e.preventDefault();
     }, { passive: false });
 
     // =========================================================================
@@ -2357,13 +2367,15 @@
       }
     }
 
-    function playTrack(trackId, restart = true, fromJam = false, customQueueIds = null, contextLabel = null) {
+    function playTrack(trackId, restart = true, fromJam = false, customQueueIds = null, contextLabel = null, loadOnly = false) {
       const tr = state.tracks.find(t => t.id === trackId) || state.tracks[0]; if (!tr) return;
       if (Array.isArray(customQueueIds) && customQueueIds.length) state.playbackQueueIds = customQueueIds;
       if (contextLabel) state.playContextLabel = contextLabel;
       const changed = state.currentTrackId !== tr.id;
       state.currentTrackId = tr.id;
       if (changed || restart) {
+        if (typeof crossfadeTriggeredFor !== 'undefined') crossfadeTriggeredFor = '';
+        streamRecoveryAttempts = 0;
         audioEl.src = tr.audioUrl; audioEl.currentTime = 0; state.countedPlayForTrack = '';
         const st = getMyStats(); st.recentIds = [tr.id, ...st.recentIds.filter(id => id !== tr.id)].slice(0, 20); savePersistent();
         state.listenLog = [{ id: tr.id, ts: Date.now() }, ...(state.listenLog || []).filter((x, i) => !(i === 0 && x.id === tr.id))].slice(0, 150);
@@ -2374,6 +2386,11 @@
         if (state.playerMode === 'lyrics' || state.playerStyle === 'minimal') loadLyricsForTrack(tr);
       }
       audioEl.volume = 1.0; applyAudioSpeed();
+      if (loadOnly) {
+        audioEl.pause(); state.isPlaying = false; stopWaveLoop();
+        updateMediaSession(tr); broadcastPresence(); syncPlaybackUI();
+        return;
+      }
       if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
       audioEl.play().then(() => {
         state.isPlaying = true;
@@ -2385,7 +2402,7 @@
     }
 
     function pauseTrack(fromJam = false) {
-      audioEl.pause(); state.isPlaying = false; stopWaveLoop();
+      audioEl.pause(); state.isPlaying = false; stopWaveLoop(); savePersistent();
       updateMediaSession(getCurrentTrack()); broadcastPresence();
       if (!fromJam) broadcastJam({ action: 'sync', trackId: state.currentTrackId, position: audioEl.currentTime, isPlaying: false, speed: state.speed });
       syncPlaybackUI();
@@ -2442,15 +2459,15 @@
         const st = getMyStats();
         splitArtists(tr.artist).forEach(a => { st.artistSec[a] = (st.artistSec[a] || 0) + 1; });
         if (state.countedPlayForTrack !== tr.id && (audioEl.currentTime || 0) >= 15) {
-          state.countedPlayForTrack = tr.id; st.totalPlays = (st.totalPlays || 0) + 1; checkBadges(); syncMyCloudProfile();
+          state.countedPlayForTrack = tr.id; st.totalPlays = (st.totalPlays || 0) + 1; checkBadges(); savePersistent(); syncMyCloudProfile();
         }
-        savePersistent();
-        if (++cloudStatsTick % 30 === 0) syncMyCloudProfile();
+        cloudStatsTick++;
+        if (cloudStatsTick % 25 === 0) savePersistent();
+        if (cloudStatsTick % 30 === 0) syncMyCloudProfile();
       }
       if (state.sleepEndTs > 0) {
         const rem = state.sleepEndTs - Date.now();
         if (rem <= 0) { pauseTrack(); audioEl.volume = 1.0; state.sleepMode = '0'; state.sleepEndTs = 0; showToast('Спокойной ночи — таймер сна остановил музыку'); renderSleepStatus(); }
-        else if (rem < 8000) audioEl.volume = Math.max(0.05, rem / 8000);
         else renderSleepStatus();
       }
     }, 1000);
@@ -2545,8 +2562,7 @@
         const expectedPos = Math.max(0, (typeof payload.position === 'number' ? payload.position : 0) + elapsed);
         if (payload.trackId && payload.trackId !== state.currentTrackId) {
           pendingJamSeek = { trackId: payload.trackId, position: payload.position || 0, ts: payload.ts || Date.now(), isPlaying: !!payload.isPlaying, speed: payload.speed || 1 };
-          playTrack(payload.trackId, true, true, null, 'Live Jam');
-          if (!payload.isPlaying) setTimeout(() => { if (!payload.isPlaying) pauseTrack(true); }, 300);
+          playTrack(payload.trackId, true, true, null, 'Live Jam', !payload.isPlaying);
           jamLastSyncLabel = 'Синхронно · трек обновлён';
         } else {
           const drift = Math.abs((audioEl.currentTime || 0) - expectedPos);
@@ -2631,8 +2647,7 @@
       }
       state.jamActive = true; state.speed = p.speed || 1.0; applyAudioSpeed();
       pendingJamSeek = { trackId: p.trackId, position: typeof p.position === 'number' ? p.position : 0, ts: p.ts || Date.now(), isPlaying: !!p.isPlaying, speed: p.speed || 1 };
-      playTrack(p.trackId, true, true, null, 'Live Jam');
-      if (!p.isPlaying) setTimeout(() => { if (!p.isPlaying) pauseTrack(true); }, 320);
+      playTrack(p.trackId, true, true, null, 'Live Jam', !p.isPlaying);
       broadcastPresence();
       setTimeout(() => broadcastJam({ action: 'ping_sync' }), 450);
       jamLastSyncLabel = 'Синхронизация с партнёром...';
@@ -2664,8 +2679,8 @@
       }
       if (state.jamActive) setTimeout(() => broadcastJam({ action: 'ping_sync' }), 700);
     }
-    document.addEventListener('visibilitychange', () => { if (!document.hidden) ensureJamChannelAlive(); });
-    window.addEventListener('online', () => { ensureJamChannelAlive(); });
+    document.addEventListener('visibilitychange', () => { if (document.hidden) savePersistent(); else ensureJamChannelAlive(); });
+    window.addEventListener('online', () => { ensureJamChannelAlive(); recoverAudioStream('online'); });
     function renderPartnerLiveUI() {
       const p = state.partnerNow, hasTrack = p && p.trackId && p.title;
       document.getElementById('partner-live-banner').classList.toggle('hidden', !hasTrack);
@@ -3105,7 +3120,7 @@
       document.getElementById('jam-members-label').textContent = state.jamActive ? (state.jamMembers >= 2 ? 'Рома и Маша слушают вместе' : 'Комната открыта · ждём второго') : 'Комната не активна';
       document.getElementById('jam-sync-offset').textContent = state.jamActive ? jamLastSyncLabel : 'Точная синхронизация и общая очередь';
       const resyncBtn = document.getElementById('btn-jam-resync');
-      if (resyncBtn) resyncBtn.classList.toggle('hidden', !(state.jamActive && state.jamMembers >= 2));
+      if (resyncBtn) resyncBtn.classList.toggle('hidden', !state.jamActive);
       const nowCard = document.getElementById('jam-now-playing-card');
       const curTr = getCurrentTrack();
       if (nowCard) {
@@ -3713,7 +3728,82 @@
         syncPlaybackUI();
       }
     });
-    audioEl.addEventListener('timeupdate', () => { if (!state.scrubbing) updateWaveformVisuals(-1); syncActiveLyricLine(audioEl.currentTime || 0, false); syncNativeAndroidMedia(getCurrentTrack(), false); });
+    let streamRecoveryAttempts = 0, streamRecoveryTimer = null, lastKnownAudioTime = 0;
+    function recoverAudioStream(reason = 'stalled') {
+      const tr = getCurrentTrack();
+      if (!state.isPlaying || !tr || !tr.audioUrl || audioEl.ended) return;
+      if (reason === 'online' && audioEl.readyState >= 3 && !audioEl.paused) return;
+      if (streamRecoveryAttempts >= 3) return;
+      clearTimeout(streamRecoveryTimer);
+      const delay = reason === 'online' ? 300 : (900 + streamRecoveryAttempts * 700);
+      streamRecoveryTimer = setTimeout(() => {
+        if (!state.isPlaying || state.currentTrackId !== tr.id || audioEl.ended) return;
+        if (reason !== 'error' && audioEl.readyState >= 3 && !audioEl.paused) return;
+        streamRecoveryAttempts++;
+        const resumeAt = Math.max(0, audioEl.currentTime || lastKnownAudioTime || 0);
+        const sep = tr.audioUrl.includes('?') ? '&' : '?';
+        audioEl.src = `${tr.audioUrl}${sep}_r=${Date.now()}`;
+        const onReady = () => {
+          audioEl.removeEventListener('loadedmetadata', onReady);
+          if (resumeAt > 0.5 && audioEl.duration && resumeAt < audioEl.duration - 0.5) {
+            try { audioEl.currentTime = resumeAt; } catch {}
+          }
+          if (state.isPlaying) audioEl.play().catch(() => {});
+        };
+        audioEl.addEventListener('loadedmetadata', onReady);
+        try { audioEl.load(); } catch {}
+      }, delay);
+    }
+    audioEl.addEventListener('stalled', () => recoverAudioStream('stalled'));
+    audioEl.addEventListener('error', () => recoverAudioStream('error'));
+    audioEl.addEventListener('playing', () => { streamRecoveryAttempts = 0; clearTimeout(streamRecoveryTimer); });
+
+    // Unified single timeupdate handler (waveform, lyrics, native sync, mini-progress, sleep 12s fade, crossfade, preloader)
+    audioEl.addEventListener('timeupdate', () => {
+      const tr = getCurrentTrack();
+      const dur = (audioEl.duration && isFinite(audioEl.duration)) ? audioEl.duration : (tr?.duration || 0);
+      const cur = audioEl.currentTime || 0;
+      if (cur > 0) lastKnownAudioTime = cur;
+      if (!state.scrubbing) updateWaveformVisuals(-1);
+      syncActiveLyricLine(cur, false);
+      syncNativeAndroidMedia(tr, false);
+
+      const pct = dur > 0 ? Math.min(100, Math.max(0, (cur / dur) * 100)) : 0;
+      const fill = document.getElementById('mini-progress-fill');
+      if (fill) fill.style.width = `${pct.toFixed(2)}%`;
+
+      if (state.sleepEndTs > 0 && state.isPlaying) {
+        const remSec = (state.sleepEndTs - Date.now()) / 1000;
+        if (remSec > 0 && remSec <= 12) audioEl.volume = Math.max(0.05, remSec / 12);
+      } else if (state.crossfadeSec > 0 && dur > 20 && state.isPlaying) {
+        const rem = dur - cur;
+        if (rem <= state.crossfadeSec && rem > 0.2) {
+          audioEl.volume = Math.max(0.08, rem / state.crossfadeSec);
+          if (rem <= 0.7 && typeof crossfadeTriggeredFor !== 'undefined' && crossfadeTriggeredFor !== state.currentTrackId) {
+            crossfadeTriggeredFor = state.currentTrackId;
+            if (state.repeatMode === 'one') {
+              crossfadeTriggeredFor = '';
+              audioEl.currentTime = 0;
+              audioEl.play().catch(() => {});
+            } else {
+              nextTrack();
+            }
+          }
+        } else if (cur < Math.min(2.5, state.crossfadeSec) && audioEl.volume < 0.99) {
+          audioEl.volume = Math.min(1.0, Math.max(0.15, cur / Math.min(2.5, state.crossfadeSec)));
+        } else if (audioEl.volume < 0.99) {
+          audioEl.volume = 1.0;
+        }
+      }
+
+      if (dur > 20 && dur - cur <= 15 && state.isPlaying && typeof preloadAudio !== 'undefined') {
+        const { next } = getNeighborTracks();
+        if (next && next.id !== state.currentTrackId && next.id !== preloadedTrackId && next.audioUrl) {
+          preloadedTrackId = next.id;
+          try { preloadAudio.src = next.audioUrl; preloadAudio.load(); } catch {}
+        }
+      }
+    });
     audioEl.addEventListener('ended', () => {
       if (state.sleepMode === 'track') { state.sleepMode = '0'; state.sleepEndTs = 0; pauseTrack(); renderSleepStatus(); showToast('Трек завершился — таймер сна остановлен'); }
       else if (state.repeatMode === 'one') { audioEl.currentTime = 0; audioEl.play().catch(() => {}); }
@@ -4202,9 +4292,11 @@
       if (!vp || !track) return;
       let sx = 0, sy = 0, dx = 0, dragging = false, locked = null, suppressClickUntil = 0;
 
+      let dyUp = 0;
+      const pSheet = document.getElementById('player-sheet');
       vp.addEventListener('touchstart', (e) => {
         if (e.touches.length !== 1) return;
-        sx = e.touches[0].clientX; sy = e.touches[0].clientY; dx = 0; dragging = true; locked = null;
+        sx = e.touches[0].clientX; sy = e.touches[0].clientY; dx = 0; dyUp = 0; dragging = true; locked = null;
         track.classList.remove('is-animating');
       }, { passive: true });
 
@@ -4217,11 +4309,24 @@
         if (locked === 'h') {
           dx = Math.max(-vp.clientWidth * 0.95, Math.min(vp.clientWidth * 0.95, curX));
           track.style.transform = `translate3d(calc(-33.3333% + ${dx}px), 0, 0)`;
+        } else if (locked === 'v' && curY < 0 && pSheet && state.currentTrackId && !state.playerOpen) {
+          dyUp = curY;
+          pSheet.style.transition = 'none';
+          pSheet.style.transform = `translate3d(0, calc(100% + ${dyUp}px), 0)`;
         }
       }, { passive: true });
 
       vp.addEventListener('touchend', () => {
         if (!dragging) return; dragging = false;
+        if (locked === 'v') {
+          if (pSheet && dyUp < 0) {
+            suppressClickUntil = Date.now() + 260;
+            pSheet.style.transition = '';
+            pSheet.style.transform = '';
+            if (dyUp < -58) { haptic(12); openPlayerSheet(true); }
+          }
+          dyUp = 0; dx = 0; return;
+        }
         if (locked !== 'h') { dx = 0; return; }
         suppressClickUntil = Date.now() + 260;
         const w = vp.clientWidth || 200;
@@ -4256,6 +4361,7 @@
     (function wireTrackRowSwipeVisual() {
       let sx = 0, sy = 0, dx = 0, rowEl = null, locked = null;
       document.addEventListener('touchstart', (e) => {
+        if (state.multiSelect) { rowEl = null; return; }
         const r = e.target.closest('.track-row');
         if (!r || e.touches.length !== 1 || e.target.closest('button')) { rowEl = null; return; }
         sx = e.touches[0].clientX; sy = e.touches[0].clientY; dx = 0; rowEl = r; locked = null;
@@ -4654,39 +4760,7 @@
     preloadAudio.crossOrigin = 'anonymous';
     let preloadedTrackId = '';
 
-    audioEl.addEventListener('timeupdate', () => {
-      const dur = audioEl.duration || getCurrentTrack()?.duration || 0;
-      const cur = audioEl.currentTime || 0;
-      const pct = dur > 0 ? Math.min(100, Math.max(0, (cur / dur) * 100)) : 0;
-      const fill = document.getElementById('mini-progress-fill');
-      if (fill) fill.style.width = `${pct.toFixed(2)}%`;
-
-      if (state.sleepEndTs > 0 && state.isPlaying) {
-        const remSec = (state.sleepEndTs - Date.now()) / 1000;
-        if (remSec > 0 && remSec <= 12) audioEl.volume = Math.max(0.05, remSec / 12);
-      } else if (state.crossfadeSec > 0 && dur > 20 && state.isPlaying) {
-        const rem = dur - cur;
-        if (rem <= state.crossfadeSec && rem > 0.2) {
-          audioEl.volume = Math.max(0.08, rem / state.crossfadeSec);
-          if (rem <= 0.7 && crossfadeTriggeredFor !== state.currentTrackId) {
-            crossfadeTriggeredFor = state.currentTrackId;
-            nextTrack();
-          }
-        } else if (cur < Math.min(2.5, state.crossfadeSec) && audioEl.volume < 0.99) {
-          audioEl.volume = Math.min(1.0, Math.max(0.15, cur / Math.min(2.5, state.crossfadeSec)));
-        } else if (audioEl.volume < 0.99) {
-          audioEl.volume = 1.0;
-        }
-      }
-
-      if (dur > 20 && dur - cur <= 15 && state.isPlaying) {
-        const { next } = getNeighborTracks();
-        if (next && next.id !== state.currentTrackId && next.id !== preloadedTrackId && next.audioUrl) {
-          preloadedTrackId = next.id;
-          try { preloadAudio.src = next.audioUrl; preloadAudio.load(); } catch {}
-        }
-      }
-    });
+    // (Merged into unified timeupdate listener in v2.8)
 
     // =========================================================================
     // V2.2: STICKY COLLAPSING PLAYLIST HEADER
@@ -4962,9 +5036,10 @@
 
 
     // =========================================================================
-    // V2.7: CHANGELOG TIMELINE (v1.0 -> v2.7) & ANDROID APP SHORTCUTS HANDLER
+    // V2.8: CHANGELOG TIMELINE (v1.0 -> v2.8) & ANDROID APP SHORTCUTS HANDLER
     // =========================================================================
     const ELYSION_CHANGELOG = [
+      { v: 'v2.8', name: 'Непрерывный поток', desc: 'Умное авто-восстановление потока при обрыве сети, свайп мини-плеера вверх 1:1, кэш виджетов против расхода батареи, надёжная Bluetooth-пауза Android 14–16, единый движок таймера сна и кроссфейда, защита от свайпов в режиме «Выбрать» и исправление прокрутки во вложенных списках шторок.' },
       { v: 'v2.7', name: 'Живой эфир', desc: 'Live Jam 2.0 (точная синхронизация, авто-реконнект, кастомные SVG-реакции прямо в плеере, общая очередь, приглашение в 1 тап и мини-чат), 3 обновлённых виджета для Android и синхронизация Bluetooth-паузы в iOS PWA.' },
       { v: 'v2.6', name: 'Нативная мощь', desc: 'Виджет на рабочий стол ColorOS 17, растягиваемая адаптивная иконка, ярлыки App Shortcuts, умная Bluetooth-пауза, аппаратный звук Android и история обновлений.' },
       { v: 'v2.5', name: 'Четыре облика', desc: '4 стиля плеера (Классика, Постер, Кино, Минимал + Текст), 7 цветовых акцентов, Радио по треку, Pull-to-Refresh, Топ-5 треков и Режим в дороге.' },
@@ -4993,6 +5068,7 @@
           </div>
           <p class="text-[11px] text-white/65 mt-1.5 leading-relaxed">${item.desc}</p>
         </div>`).join('');
+      const clEl = document.getElementById('changelog-timeline-list'); if (clEl) clEl.scrollTop = 0;
       haptic(10); openSpringSheet('changelog-modal');
     });
 

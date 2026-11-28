@@ -18,6 +18,7 @@ import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
 import androidx.core.app.NotificationCompat;
+import androidx.core.content.ContextCompat;
 import androidx.media.app.NotificationCompat.MediaStyle;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -41,7 +42,7 @@ public class ElysionMediaService extends Service {
     public void onCreate() {
         super.onCreate();
         createChannel();
-        try { registerReceiver(noisyReceiver, new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY)); } catch (Exception ignored) {}
+        try { ContextCompat.registerReceiver(this, noisyReceiver, new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY), ContextCompat.RECEIVER_NOT_EXPORTED); } catch (Exception ignored) {}
         mediaSession = new MediaSessionCompat(this, "ElysionMediaSession");
         mediaSession.setCallback(new MediaSessionCompat.Callback() {
             @Override public void onPlay() { ElysionMediaPlugin.emitAction("play"); }
