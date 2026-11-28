@@ -243,7 +243,10 @@
     .eq-paused .eq-bar { animation: none; height: 4px; opacity: 0.7; }
     @keyframes eqBounce { 0% { transform: scaleY(0.35); } 100% { transform: scaleY(1); } }
 
-    .floating-react { position: fixed; bottom: 110px; z-index: 80; font-size: 28px; pointer-events: none; animation: floatUpReact 1.9s cubic-bezier(0.22,1,0.36,1) forwards; }
+    .floating-react { position: fixed; bottom: 120px; z-index: 120; pointer-events: none; display: inline-flex; align-items: center; gap: 6px; padding: 9px 12px; border-radius: 999px; background: rgba(16, 10, 28, 0.88); border: 1px solid rgba(255,255,255,0.16); box-shadow: 0 10px 28px rgba(0,0,0,0.45); animation: floatUpReact 2.0s cubic-bezier(0.22,1,0.36,1) forwards; }
+    .jam-live-dot { width: 7px; height: 7px; border-radius: 999px; background: #EC4899; box-shadow: 0 0 10px #EC4899; display: inline-block; }
+    #jam-invite-toast, #jam-chat-pop { position: fixed; top: calc(var(--safe-top) + 12px); left: 50%; transform: translate(-50%, -140%); z-index: 115; width: calc(100% - 28px); max-width: 420px; opacity: 0; pointer-events: none; transition: transform 0.34s cubic-bezier(0.22,1,0.36,1), opacity 0.25s ease; }
+    #jam-invite-toast.show, #jam-chat-pop.show { transform: translate(-50%, 0); opacity: 1; pointer-events: auto; }
     @keyframes floatUpReact { 0% { transform: translateY(0) scale(0.6); opacity: 0; } 15% { opacity: 1; transform: translateY(-28px) scale(1.15); } 100% { transform: translateY(-260px) scale(0.95); opacity: 0; } }
 
     .pin-dot { width: 14px; height: 14px; border-radius: 999px; border: 2px solid rgba(255,255,255,0.3); transition: all 0.16s ease; }
@@ -649,41 +652,74 @@
       <div id="search-results-container" class="hidden space-y-5"></div>
     </section>
 
-    <!-- VIEW 3: LIVE JAM -->
-    <section id="view-jam" class="app-view app-scroll-pane no-scrollbar hidden space-y-5 max-w-2xl mx-auto">
+    <!-- VIEW 3: LIVE JAM 2.0 -->
+    <section id="view-jam" class="app-view app-scroll-pane no-scrollbar hidden space-y-4 max-w-2xl mx-auto">
       <header class="flex items-center justify-between">
-        <div><h1 class="text-2xl font-extrabold">Live Jam</h1><p class="text-xs text-white/55 mt-0.5">Слушайте треки секунда в секунду вместе</p></div>
-        <div id="jam-status-pill" class="px-3 py-1.5 rounded-full glass-soft text-xs font-semibold text-white/60">Офлайн</div>
+        <div><h1 class="text-2xl font-extrabold">Live Jam</h1><p class="text-xs text-white/55 mt-0.5">Общий эфир, очередь и живые реакции</p></div>
+        <div id="jam-status-pill" class="px-3 py-1.5 rounded-full glass-soft text-xs font-semibold text-white/60 flex items-center gap-1.5"><span>Офлайн</span></div>
       </header>
+
       <div id="jam-partner-now-card" class="glass-card rounded-3xl p-4 flex items-center justify-between gap-3">
         <div class="flex items-center gap-3 min-w-0">
           <div id="jam-partner-now-avatar" class="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-base font-bold overflow-hidden flex-shrink-0">М</div>
           <div class="min-w-0"><div id="jam-partner-now-label" class="text-xs font-bold text-white/85 truncate">Второй телефон пока не в сети</div><div id="jam-partner-now-sub" class="text-[11px] text-white/50 truncate">Как только включит трек — он появится здесь</div></div>
         </div>
-        <button id="btn-jam-join-partner" class="hidden px-3.5 py-2 rounded-full accent-grad text-xs font-bold flex-shrink-0">Подключиться</button>
+        <button id="btn-jam-join-partner" class="hidden px-3.5 py-2 rounded-full accent-grad text-xs font-bold flex-shrink-0 active:scale-95 transition">Подключиться</button>
       </div>
+
+      <div id="jam-now-playing-card" class="hidden glass-card rounded-3xl p-4 flex items-center justify-between gap-3 border border-pink-400/25">
+        <div class="flex items-center gap-3 min-w-0">
+          <img id="jam-now-cover" src="" alt="" class="w-14 h-14 rounded-2xl object-cover border border-white/15 flex-shrink-0" />
+          <div class="min-w-0">
+            <div class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-pink-200"><span class="jam-live-dot"></span><span>Сейчас в эфире</span></div>
+            <div id="jam-now-title" class="text-sm font-extrabold truncate mt-0.5">—</div>
+            <div id="jam-now-artist" class="text-xs text-white/60 truncate">—</div>
+          </div>
+        </div>
+        <button id="btn-jam-open-player" class="px-3.5 py-2 rounded-full bg-white/10 text-xs font-bold text-white active:scale-95 transition flex-shrink-0">В плеер</button>
+      </div>
+
       <div class="glass-card rounded-3xl p-5 space-y-4">
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between gap-3">
           <div class="flex items-center gap-3 min-w-0">
             <div class="flex -space-x-2.5">
               <div id="jam-me-avatar" class="w-10 h-10 rounded-full accent-grad border-2 border-[#07040F] flex items-center justify-center text-xs font-extrabold overflow-hidden">Р</div>
               <div id="jam-partner-avatar" class="w-10 h-10 rounded-full bg-white/10 border-2 border-[#07040F] flex items-center justify-center text-xs font-extrabold overflow-hidden">М</div>
             </div>
-            <div class="min-w-0"><div id="jam-members-label" class="text-sm font-bold truncate">Комната не активна</div><div id="jam-sync-offset" class="text-[11px] text-white/50 truncate">Синхронизация: пауза, перемотка и скорость</div></div>
+            <div class="min-w-0"><div id="jam-members-label" class="text-sm font-bold truncate">Комната не активна</div><div id="jam-sync-offset" class="text-[11px] text-white/50 truncate">Точная синхронизация и общая очередь</div></div>
           </div>
-          <button id="btn-toggle-jam" class="px-4 py-2.5 rounded-full accent-grad text-xs font-bold shadow-lg active:scale-95 transition">Включить Jam</button>
+          <button id="btn-toggle-jam" class="px-4 py-2.5 rounded-full accent-grad text-xs font-bold shadow-lg active:scale-95 transition flex-shrink-0">Включить Jam</button>
         </div>
-        <div class="pt-2 border-t border-white/10">
-          <div class="text-[11px] text-white/50 mb-2">Живые реакции на экран обоим</div>
-          <div class="grid grid-cols-4 gap-2">
-            <button data-react="💜" class="glass-soft py-2.5 rounded-2xl text-lg active:scale-90 transition">💜</button>
-            <button data-react="🔥" class="glass-soft py-2.5 rounded-2xl text-lg active:scale-90 transition">🔥</button>
-            <button data-react="✨" class="glass-soft py-2.5 rounded-2xl text-lg active:scale-90 transition">✨</button>
-            <button data-react="🥺" class="glass-soft py-2.5 rounded-2xl text-lg active:scale-90 transition">🥺</button>
+        <div class="pt-3 border-t border-white/10">
+          <div class="text-[11px] text-white/50 mb-2.5">Живые реакции на экран обоим</div>
+          <div class="grid grid-cols-5 gap-2">
+            <button data-react="heart" class="glass-soft py-2.5 rounded-2xl flex items-center justify-center active:scale-90 transition" title="Сердце"><svg width="20" height="20" viewBox="0 0 24 24" fill="#EC4899"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></button>
+            <button data-react="fire" class="glass-soft py-2.5 rounded-2xl flex items-center justify-center active:scale-90 transition" title="Огонь"><svg width="20" height="20" viewBox="0 0 24 24" fill="#FB923C"><path d="M12.5 2c.3 3.2-1.9 5.1-3.3 6.8C7.6 10.6 6.5 12.4 6.5 14.6a5.5 5.5 0 0 0 11 0c0-2.6-1.5-4.8-3.1-6.5-.2 1.4-.9 2.3-1.8 2.8.8-2.4.9-5.9-.1-8.9z"/></svg></button>
+            <button data-react="spark" class="glass-soft py-2.5 rounded-2xl flex items-center justify-center active:scale-90 transition" title="Искра"><svg width="20" height="20" viewBox="0 0 24 24" fill="#C084FC"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8L12 2z"/></svg></button>
+            <button data-react="star" class="glass-soft py-2.5 rounded-2xl flex items-center justify-center active:scale-90 transition" title="Звезда"><svg width="20" height="20" viewBox="0 0 24 24" fill="#FDE047"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4 6.1 20.5l1.2-6.5L2.5 9.4l6.6-.9L12 2.5z"/></svg></button>
+            <button data-react="wave" class="glass-soft py-2.5 rounded-2xl flex items-center justify-center active:scale-90 transition" title="Мурашки"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38BDF8" stroke-width="2.4" stroke-linecap="round"><line x1="4" y1="12" x2="4" y2="12"/><line x1="8" y1="8" x2="8" y2="16"/><line x1="12" y1="4" x2="12" y2="20"/><line x1="16" y1="8" x2="16" y2="16"/><line x1="20" y1="10" x2="20" y2="14"/></svg></button>
           </div>
         </div>
       </div>
-      <div class="glass-soft rounded-3xl p-4"><div class="text-xs font-bold text-white/70 mb-2">События комнаты</div><div id="jam-log" class="space-y-1.5 max-h-44 overflow-y-auto no-scrollbar text-xs text-white/55"></div></div>
+
+      <div class="glass-card rounded-3xl p-4 space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="text-xs font-bold text-white/80">Чат и события комнаты</div>
+          <button id="btn-jam-resync" class="hidden px-2.5 py-1 rounded-full bg-white/10 text-[10px] font-bold text-pink-200 active:scale-95 transition">Выровнять</button>
+        </div>
+        <div id="jam-log" class="space-y-2 max-h-48 overflow-y-auto no-scrollbar text-xs text-white/70"></div>
+        <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-1">
+          <button data-jam-quick="Этот припев просто космос" class="px-3 py-1.5 rounded-full bg-white/10 text-[11px] font-semibold text-white/80 whitespace-nowrap active:scale-95 transition">Этот припев</button>
+          <button data-jam-quick="Ставим на репит" class="px-3 py-1.5 rounded-full bg-white/10 text-[11px] font-semibold text-white/80 whitespace-nowrap active:scale-95 transition">На репит</button>
+          <button data-jam-quick="Следующий трек мой" class="px-3 py-1.5 rounded-full bg-white/10 text-[11px] font-semibold text-white/80 whitespace-nowrap active:scale-95 transition">Следующий мой</button>
+        </div>
+        <div class="flex items-center gap-2">
+          <input id="jam-chat-input" type="text" maxlength="140" placeholder="Кинуть фразу в эфир..." class="flex-1 bg-white/10 border border-white/10 rounded-2xl px-3.5 py-2.5 text-xs text-white placeholder-white/40 outline-none focus:border-pink-400/50" />
+          <button id="btn-jam-send-chat" class="w-10 h-10 rounded-2xl accent-grad flex items-center justify-center text-white active:scale-90 transition flex-shrink-0" title="Отправить">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+      </div>
     </section>
 
     <!-- VIEW 4: PERSONAL PROFILE (Rounded Soft-Fading Hero Card, Clean 2-Icon Top Bar) -->
@@ -989,10 +1025,10 @@
           <div class="icon-badge"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg></div>
           <div>
             <div class="text-sm font-extrabold">История обновлений</div>
-            <div class="text-[11px] text-white/55">Elysion v2.6 · «Нативная мощь»</div>
+            <div class="text-[11px] text-white/55">Elysion v2.7 · «Живой эфир»</div>
           </div>
         </div>
-        <span class="px-2.5 py-1 rounded-full bg-white/10 text-[11px] font-extrabold text-pink-200">v2.6</span>
+        <span class="px-2.5 py-1 rounded-full bg-white/10 text-[11px] font-extrabold text-pink-200">v2.7</span>
       </button>
     </section>
 
@@ -1171,6 +1207,20 @@
           </div>
         </div>
 
+        <div id="player-jam-react-bar" class="hidden items-center justify-between gap-1.5 px-2 py-1.5 rounded-2xl bg-white/10 border border-white/10">
+          <div class="flex items-center gap-1.5">
+            <span class="jam-live-dot ml-1"></span>
+            <button data-react="heart" class="w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center active:scale-90 transition" title="Сердце"><svg width="16" height="16" viewBox="0 0 24 24" fill="#EC4899"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></button>
+            <button data-react="fire" class="w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center active:scale-90 transition" title="Огонь"><svg width="16" height="16" viewBox="0 0 24 24" fill="#FB923C"><path d="M12.5 2c.3 3.2-1.9 5.1-3.3 6.8C7.6 10.6 6.5 12.4 6.5 14.6a5.5 5.5 0 0 0 11 0c0-2.6-1.5-4.8-3.1-6.5-.2 1.4-.9 2.3-1.8 2.8.8-2.4.9-5.9-.1-8.9z"/></svg></button>
+            <button data-react="spark" class="w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center active:scale-90 transition" title="Искра"><svg width="16" height="16" viewBox="0 0 24 24" fill="#C084FC"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8L12 2z"/></svg></button>
+            <button data-react="star" class="w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center active:scale-90 transition" title="Звезда"><svg width="16" height="16" viewBox="0 0 24 24" fill="#FDE047"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4 6.1 20.5l1.2-6.5L2.5 9.4l6.6-.9L12 2.5z"/></svg></button>
+            <button data-react="wave" class="w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center active:scale-90 transition" title="Мурашки"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#38BDF8" stroke-width="2.4" stroke-linecap="round"><line x1="4" y1="12" x2="4" y2="12"/><line x1="8" y1="8" x2="8" y2="16"/><line x1="12" y1="4" x2="12" y2="20"/><line x1="16" y1="8" x2="16" y2="16"/><line x1="20" y1="10" x2="20" y2="14"/></svg></button>
+          </div>
+          <button id="btn-player-jam-chat" class="px-2.5 h-8 rounded-xl bg-white/10 text-[11px] font-bold text-white/85 flex items-center gap-1 active:scale-95 transition">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span>Чат</span>
+          </button>
+        </div>
         <div id="player-action-dock" class="flex items-center justify-around px-1 pt-0.5">
           <button id="btn-toggle-lyrics" class="w-10 h-10 rounded-2xl flex items-center justify-center text-sm font-extrabold text-white/75 active:scale-90 transition">Тт</button>
           <button id="btn-open-fx" class="w-10 h-10 rounded-2xl flex items-center justify-center text-white/70 active:scale-90 transition"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg></button>
@@ -1391,7 +1441,7 @@
       <div class="flex items-center justify-between">
         <div>
           <h3 class="text-base font-extrabold">История обновлений</h3>
-          <p class="text-[11px] text-white/55">Летопись Elysion от v1.0 до v2.6</p>
+          <p class="text-[11px] text-white/55">Летопись Elysion от v1.0 до v2.7</p>
         </div>
         <button data-close-sheet="changelog-modal" class="w-8 h-8 rounded-full bg-white/10 text-xs flex items-center justify-center">✕</button>
       </div>
@@ -1529,6 +1579,26 @@
     </div>
   </div>
 
+  <div id="jam-invite-toast" class="elysion-sheet rounded-3xl p-3.5 border border-pink-400/35 shadow-2xl flex items-center justify-between gap-3">
+    <div class="flex items-center gap-3 min-w-0">
+      <img id="jam-invite-cover" src="" alt="" class="w-11 h-11 rounded-2xl object-cover border border-white/15 flex-shrink-0" />
+      <div class="min-w-0">
+        <div id="jam-invite-title" class="text-xs font-extrabold text-white truncate">Live Jam открыт</div>
+        <div id="jam-invite-sub" class="text-[11px] text-white/65 truncate">Нажми, чтобы слушать вместе</div>
+      </div>
+    </div>
+    <div class="flex items-center gap-1.5 flex-shrink-0">
+      <button id="btn-jam-invite-accept" class="px-3 py-1.5 rounded-full accent-grad text-[11px] font-bold text-white active:scale-95 transition">Войти</button>
+      <button id="btn-jam-invite-close" class="w-7 h-7 rounded-full bg-white/10 text-white/70 text-xs flex items-center justify-center">✕</button>
+    </div>
+  </div>
+  <div id="jam-chat-pop" class="elysion-sheet rounded-3xl px-4 py-3 border border-white/15 shadow-2xl flex items-center gap-3">
+    <span class="jam-live-dot flex-shrink-0"></span>
+    <div class="min-w-0 flex-1">
+      <div id="jam-chat-pop-from" class="text-[10px] font-bold uppercase tracking-wider text-pink-200">Live Jam</div>
+      <div id="jam-chat-pop-text" class="text-xs font-semibold text-white truncate mt-0.5"></div>
+    </div>
+  </div>
   <audio id="audio-el" crossorigin="anonymous" preload="auto" playsinline></audio>
 
   <script>
@@ -2256,6 +2326,7 @@
           artist: track.artist || '',
           artwork: track.cover && track.cover.startsWith('http') ? track.cover : '',
           isPlaying: !!state.isPlaying,
+          isLiked: !!isLikedByMe(track),
           duration: Math.round(durSec * 1000),
           position: Math.round(posSec * 1000)
         });
@@ -2301,7 +2372,7 @@
         state.isPlaying = true;
         if (state.playerOpen) startWaveLoop();
         updateMediaSession(tr); broadcastPresence();
-        if (!fromJam) broadcastJam({ action: 'sync', trackId: tr.id, position: audioEl.currentTime, isPlaying: true, speed: state.speed });
+        if (!fromJam) broadcastJam({ action: 'sync', trackId: tr.id, position: audioEl.currentTime, isPlaying: true, speed: state.speed, queueIds: Array.isArray(customQueueIds) && customQueueIds.length ? state.playbackQueueIds.slice(0, 30) : undefined });
         syncPlaybackUI();
       }).catch(() => { state.isPlaying = false; syncPlaybackUI(); });
     }
@@ -2378,31 +2449,113 @@
     }, 1000);
 
     // =========================================================================
-    // LIVE JAM & PRESENCE
+    // LIVE JAM 2.0 & PRESENCE (Accurate Sync, Reconnect, SVG Reactions, Shared Queue, Mini-Chat)
     // =========================================================================
-    let presenceChannel = null, suppressJamBroadcast = false;
-    function spawnFloatingReaction(emoji) {
-      const el = document.createElement('div'); el.className = 'floating-react'; el.textContent = emoji;
-      el.style.left = `${20 + Math.random() * 60}%`; document.body.appendChild(el); setTimeout(() => el.remove(), 1950);
+    let presenceChannel = null, suppressJamBroadcast = false, pendingJamSeek = null;
+    let jamInviteTimer = null, jamChatPopTimer = null, jamLastSyncLabel = 'Точная синхронизация и общая очередь';
+    const JAM_REACTIONS = {
+      heart: { label: 'Сердце', svg: '<svg width="20" height="20" viewBox="0 0 24 24" fill="#EC4899"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>' },
+      fire:  { label: 'Огонь',  svg: '<svg width="20" height="20" viewBox="0 0 24 24" fill="#FB923C"><path d="M12.5 2c.3 3.2-1.9 5.1-3.3 6.8C7.6 10.6 6.5 12.4 6.5 14.6a5.5 5.5 0 0 0 11 0c0-2.6-1.5-4.8-3.1-6.5-.2 1.4-.9 2.3-1.8 2.8.8-2.4.9-5.9-.1-8.9z"/></svg>' },
+      spark: { label: 'Искра',  svg: '<svg width="20" height="20" viewBox="0 0 24 24" fill="#C084FC"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8L12 2z"/></svg>' },
+      star:  { label: 'Звезда', svg: '<svg width="20" height="20" viewBox="0 0 24 24" fill="#FDE047"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4 6.1 20.5l1.2-6.5L2.5 9.4l6.6-.9L12 2.5z"/></svg>' },
+      wave:  { label: 'Мурашки',svg: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38BDF8" stroke-width="2.4" stroke-linecap="round"><line x1="4" y1="12" x2="4" y2="12"/><line x1="8" y1="8" x2="8" y2="16"/><line x1="12" y1="4" x2="12" y2="20"/><line x1="16" y1="8" x2="16" y2="16"/><line x1="20" y1="10" x2="20" y2="14"/></svg>' }
+    };
+    function spawnFloatingReaction(key, fromName = '') {
+      const def = JAM_REACTIONS[key] || JAM_REACTIONS.heart;
+      const el = document.createElement('div');
+      el.className = 'floating-react';
+      el.innerHTML = def.svg + (fromName ? `<span class="text-[11px] font-bold text-white/90 pr-0.5">${escapeHtml(fromName)}</span>` : '');
+      el.style.left = `${18 + Math.random() * 64}%`;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 2050);
     }
-    function addJamLog(msg) {
+    function addJamLog(msg, isChat = false, sender = '') {
       const d = new Date();
-      state.jamLogs.unshift(`[${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}] ${msg}`);
-      state.jamLogs = state.jamLogs.slice(0, 20); renderJamView();
+      const tm = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+      state.jamLogs.unshift({ tm, msg, isChat, sender });
+      state.jamLogs = state.jamLogs.slice(0, 30);
+      renderJamView();
+    }
+    function showJamChatPopup(fromName, text) {
+      const pop = document.getElementById('jam-chat-pop');
+      if (!pop) return;
+      document.getElementById('jam-chat-pop-from').textContent = `${fromName} · Live Jam`;
+      document.getElementById('jam-chat-pop-text').textContent = text;
+      pop.classList.add('show');
+      clearTimeout(jamChatPopTimer);
+      jamChatPopTimer = setTimeout(() => pop.classList.remove('show'), 4600);
+    }
+    function showJamInviteBanner(payload) {
+      if (state.jamActive) return;
+      const el = document.getElementById('jam-invite-toast');
+      if (!el) return;
+      const who = PROFILE_NAMES[payload.from] || 'Партнёр';
+      document.getElementById('jam-invite-cover').src = payload.cover || FALLBACK_COVERS[0];
+      document.getElementById('jam-invite-title').textContent = `${who} открыл(а) Live Jam`;
+      document.getElementById('jam-invite-sub').textContent = payload.title ? `${payload.title} — ${payload.artist || ''}` : 'Нажми, чтобы слушать вместе';
+      el.classList.add('show');
+      clearTimeout(jamInviteTimer);
+      jamInviteTimer = setTimeout(() => el.classList.remove('show'), 12000);
+    }
+    function applyPendingJamSeek() {
+      if (!pendingJamSeek || pendingJamSeek.trackId !== state.currentTrackId) return;
+      const dur = (audioEl.duration && isFinite(audioEl.duration)) ? audioEl.duration : 0;
+      if (dur <= 0) return;
+      const elapsed = pendingJamSeek.isPlaying && pendingJamSeek.ts ? Math.max(0, (Date.now() - pendingJamSeek.ts) / 1000) * (pendingJamSeek.speed || 1) : 0;
+      const target = Math.min(Math.max(0, dur - 0.5), Math.max(0, (pendingJamSeek.position || 0) + elapsed));
+      try { audioEl.currentTime = target; } catch {}
+      pendingJamSeek = null;
+      updateWaveformVisuals(-1);
     }
     function broadcastPresence() {
       if (!presenceChannel || !state.activeUser) return;
       const tr = getCurrentTrack();
       presenceChannel.track({
         who: getUser(), name: PROFILE_NAMES[getUser()], trackId: tr?.id || '', title: tr?.title || '', artist: tr?.artist || '', cover: tr?.cover || '',
-        isPlaying: !!state.isPlaying, position: Math.floor(audioEl.currentTime || 0), speed: state.speed, jamActive: !!state.jamActive, ts: Date.now()
+        isPlaying: !!state.isPlaying, position: Number((audioEl.currentTime || 0).toFixed(2)), speed: state.speed, jamActive: !!state.jamActive, ts: Date.now()
       }).catch(() => {});
     }
-    function broadcastJam(payload) {
-      if (!presenceChannel || !state.jamActive || suppressJamBroadcast) return;
-      const now = Date.now(); if (payload.action === 'sync' && now - state.lastJamEmitTs < 500) return;
-      state.lastJamEmitTs = now;
-      presenceChannel.send({ type: 'broadcast', event: 'jam_evt', payload: { ...payload, from: getUser(), ts: now } });
+    function broadcastJam(payload, forceChannel = false) {
+      if (!presenceChannel || (!state.jamActive && !forceChannel) || suppressJamBroadcast) return;
+      const now = Date.now();
+      if (payload.action === 'sync' && now - state.lastJamEmitTs < 380) return;
+      if (payload.action === 'sync') state.lastJamEmitTs = now;
+      presenceChannel.send({ type: 'broadcast', event: 'jam_evt', payload: { ...payload, from: getUser(), ts: now } }).catch(() => {});
+    }
+    function broadcastJamQueue() {
+      if (!state.jamActive || suppressJamBroadcast || !Array.isArray(state.playbackQueueIds) || !state.playbackQueueIds.length) return;
+      broadcastJam({ action: 'queue', queueIds: state.playbackQueueIds.slice(0, 30), contextLabel: state.playContextLabel || 'Live Jam' });
+    }
+    function applyJamSyncPayload(payload, isHeartbeat = false) {
+      suppressJamBroadcast = true;
+      try {
+        if (payload.speed && Math.abs(payload.speed - state.speed) > 0.01) { state.speed = payload.speed; applyAudioSpeed(); }
+        if (Array.isArray(payload.queueIds) && payload.queueIds.length) {
+          state.playbackQueueIds = payload.queueIds.slice(0, 30);
+          if (state.playerMode === 'queue') renderQueueStageV2();
+        }
+        const elapsed = payload.isPlaying && payload.ts ? Math.max(0, (Date.now() - payload.ts) / 1000) * (payload.speed || state.speed || 1) : 0;
+        const expectedPos = Math.max(0, (typeof payload.position === 'number' ? payload.position : 0) + elapsed);
+        if (payload.trackId && payload.trackId !== state.currentTrackId) {
+          pendingJamSeek = { trackId: payload.trackId, position: payload.position || 0, ts: payload.ts || Date.now(), isPlaying: !!payload.isPlaying, speed: payload.speed || 1 };
+          playTrack(payload.trackId, true, true, null, 'Live Jam');
+          if (!payload.isPlaying) setTimeout(() => { if (!payload.isPlaying) pauseTrack(true); }, 300);
+          jamLastSyncLabel = 'Синхронно · трек обновлён';
+        } else {
+          const drift = Math.abs((audioEl.currentTime || 0) - expectedPos);
+          const threshold = isHeartbeat ? 1.5 : 0.9;
+          if (typeof payload.position === 'number' && drift > threshold) {
+            const dur = (audioEl.duration && isFinite(audioEl.duration)) ? audioEl.duration : 9999;
+            audioEl.currentTime = Math.min(Math.max(0, dur - 0.5), expectedPos);
+            jamLastSyncLabel = `Выровнено · ${drift.toFixed(1)}с`;
+          } else {
+            jamLastSyncLabel = `Синхронно · ${drift.toFixed(1)}с`;
+          }
+          if (payload.isPlaying && !state.isPlaying) playTrack(state.currentTrackId, false, true);
+          else if (!payload.isPlaying && state.isPlaying) pauseTrack(true);
+        }
+        renderJamView();
+      } finally { setTimeout(() => { suppressJamBroadcast = false; }, 550); }
     }
     function connectPresenceChannel() {
       if (!sb || !state.activeUser) return;
@@ -2416,32 +2569,96 @@
       });
       presenceChannel.on('broadcast', { event: 'jam_evt' }, ({ payload }) => {
         if (!payload || payload.from === getUser()) return;
-        if (payload.action === 'react') { spawnFloatingReaction(payload.emoji || '💜'); addJamLog(`${PROFILE_NAMES[payload.from]} отправил(а) ${payload.emoji}`); return; }
+        const who = PROFILE_NAMES[payload.from] || 'Партнёр';
+        if (payload.action === 'invite') {
+          showJamInviteBanner(payload);
+          addJamLog(`${who} открыл(а) Live Jam`);
+          return;
+        }
+        if (payload.action === 'react') {
+          const rk = JAM_REACTIONS[payload.reactKey] ? payload.reactKey : 'heart';
+          spawnFloatingReaction(rk, who);
+          haptic(10);
+          addJamLog(`${who}: реакция «${JAM_REACTIONS[rk].label}»`);
+          return;
+        }
+        if (payload.action === 'chat' && payload.text) {
+          addJamLog(payload.text, true, who);
+          if (state.activeView !== 'jam' || state.playerOpen) showJamChatPopup(who, payload.text);
+          haptic(8);
+          return;
+        }
         if (!state.jamActive) return;
-        suppressJamBroadcast = true;
-        try {
-          if (payload.action === 'sync') {
-            if (payload.speed && Math.abs(payload.speed - state.speed) > 0.01) { state.speed = payload.speed; applyAudioSpeed(); }
-            if (payload.trackId && payload.trackId !== state.currentTrackId) {
-              playTrack(payload.trackId, true, true);
-              setTimeout(() => { if (typeof payload.position === 'number') audioEl.currentTime = payload.position; }, 350);
-            } else {
-              if (typeof payload.position === 'number' && Math.abs((audioEl.currentTime || 0) - payload.position) > 2.0) audioEl.currentTime = payload.position;
-              if (payload.isPlaying && !state.isPlaying) playTrack(state.currentTrackId, false, true);
-              else if (!payload.isPlaying && state.isPlaying) pauseTrack(true);
-            }
+        if (payload.action === 'ping_sync') {
+          if (state.currentTrackId) {
+            broadcastJam({
+              action: 'pong_sync', trackId: state.currentTrackId, position: audioEl.currentTime || 0,
+              isPlaying: !!state.isPlaying, speed: state.speed, queueIds: (state.playbackQueueIds || []).slice(0, 30)
+            });
           }
-        } finally { setTimeout(() => { suppressJamBroadcast = false; }, 600); }
+          return;
+        }
+        if (payload.action === 'queue' && Array.isArray(payload.queueIds) && payload.queueIds.length) {
+          state.playbackQueueIds = payload.queueIds.slice(0, 30);
+          if (payload.contextLabel) state.playContextLabel = payload.contextLabel;
+          if (state.playerMode === 'queue') renderQueueStageV2();
+          addJamLog(`${who} обновил(а) общую очередь`);
+          return;
+        }
+        if (payload.action === 'sync' || payload.action === 'pong_sync' || payload.action === 'heartbeat_sync') {
+          applyJamSyncPayload(payload, payload.action === 'heartbeat_sync');
+        }
       });
       presenceChannel.subscribe((status) => { if (status === 'SUBSCRIBED') broadcastPresence(); });
     }
     function joinPartnerLive() {
-      const p = state.partnerNow; if (!p?.trackId) { showToast('У второго телефона пока не выбран трек'); return; }
+      document.getElementById('jam-invite-toast')?.classList.remove('show');
+      const p = state.partnerNow;
+      if (!p?.trackId) {
+        state.jamActive = true;
+        broadcastPresence();
+        broadcastJam({ action: 'ping_sync' });
+        addJamLog('Подключился(ась) к Live Jam');
+        renderAll();
+        return;
+      }
       state.jamActive = true; state.speed = p.speed || 1.0; applyAudioSpeed();
+      pendingJamSeek = { trackId: p.trackId, position: typeof p.position === 'number' ? p.position : 0, ts: p.ts || Date.now(), isPlaying: !!p.isPlaying, speed: p.speed || 1 };
       playTrack(p.trackId, true, true, null, 'Live Jam');
-      setTimeout(() => { if (typeof p.position === 'number') audioEl.currentTime = p.position; }, 400);
-      broadcastPresence(); addJamLog(`Подключился(ась) к ${p.name}: ${p.title}`); showToast(`Live Jam с ${p.name} включён!`); renderAll();
+      if (!p.isPlaying) setTimeout(() => { if (!p.isPlaying) pauseTrack(true); }, 320);
+      broadcastPresence();
+      setTimeout(() => broadcastJam({ action: 'ping_sync' }), 450);
+      jamLastSyncLabel = 'Синхронизация с партнёром...';
+      addJamLog(`Подключился(ась) к ${p.name}: ${p.title}`);
+      showToast(`Live Jam с ${p.name} включён`);
+      renderAll();
     }
+    function sendJamChatMessage(rawText) {
+      const text = (rawText || '').trim().slice(0, 140);
+      if (!text) return;
+      addJamLog(text, true, PROFILE_NAMES[getUser()]);
+      broadcastJam({ action: 'chat', text }, true);
+      haptic(8);
+    }
+    // Periodic Live Jam drift alignment (every 12s while both listening)
+    setInterval(() => {
+      if (state.jamActive && state.jamMembers >= 2 && state.isPlaying && state.currentTrackId && !suppressJamBroadcast) {
+        broadcastJam({ action: 'heartbeat_sync', trackId: state.currentTrackId, position: audioEl.currentTime || 0, isPlaying: true, speed: state.speed });
+      }
+    }, 12000);
+    // Reliable auto-reconnect on screen wake / network recovery (iOS PWA & Android APK)
+    function ensureJamChannelAlive() {
+      if (!sb || !state.activeUser) return;
+      const st = presenceChannel?.state;
+      if (!presenceChannel || (st && st !== 'joined' && st !== 'joining')) {
+        connectPresenceChannel();
+      } else {
+        broadcastPresence();
+      }
+      if (state.jamActive) setTimeout(() => broadcastJam({ action: 'ping_sync' }), 700);
+    }
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) ensureJamChannelAlive(); });
+    window.addEventListener('online', () => { ensureJamChannelAlive(); });
     function renderPartnerLiveUI() {
       const p = state.partnerNow, hasTrack = p && p.trackId && p.title;
       document.getElementById('partner-live-banner').classList.toggle('hidden', !hasTrack);
@@ -2561,7 +2778,7 @@
       haptic(12);
       const u = getUser(); if (u === 'he') tr.likedHe = !tr.likedHe; else tr.likedShe = !tr.likedShe;
       if (sb) await sb.from('tracks').update(u === 'he' ? { like_he: tr.likedHe } : { like_she: tr.likedShe }).eq('id', tr.id);
-      checkBadges(); renderAll();
+      checkBadges(); renderAll();      if (trackId === state.currentTrackId) syncNativeAndroidMedia(getCurrentTrack(), true);
     }
 
     function openTrackMenu(trackId) {
@@ -2875,13 +3092,37 @@
     }
 
     function renderJamView() {
-      document.getElementById('jam-status-pill').textContent = state.jamActive ? 'В эфире' : 'Офлайн';
+      const pill = document.getElementById('jam-status-pill');
+      pill.innerHTML = state.jamActive ? '<span class="jam-live-dot"></span><span class="text-pink-200">В эфире</span>' : '<span>Офлайн</span>';
       document.getElementById('btn-toggle-jam').textContent = state.jamActive ? 'Выйти из Jam' : 'Включить Jam';
       document.getElementById('jam-members-label').textContent = state.jamActive ? (state.jamMembers >= 2 ? 'Рома и Маша слушают вместе' : 'Комната открыта · ждём второго') : 'Комната не активна';
+      document.getElementById('jam-sync-offset').textContent = state.jamActive ? jamLastSyncLabel : 'Точная синхронизация и общая очередь';
+      const resyncBtn = document.getElementById('btn-jam-resync');
+      if (resyncBtn) resyncBtn.classList.toggle('hidden', !(state.jamActive && state.jamMembers >= 2));
+      const nowCard = document.getElementById('jam-now-playing-card');
+      const curTr = getCurrentTrack();
+      if (nowCard) {
+        const showNow = !!(state.jamActive && curTr);
+        nowCard.classList.toggle('hidden', !showNow);
+        if (showNow) {
+          document.getElementById('jam-now-cover').src = curTr.cover || FALLBACK_COVERS[0];
+          document.getElementById('jam-now-title').textContent = curTr.title || '—';
+          document.getElementById('jam-now-artist').textContent = curTr.artist || '—';
+        }
+      }
+      const pReactBar = document.getElementById('player-jam-react-bar');
+      if (pReactBar) {
+        pReactBar.classList.toggle('hidden', !state.jamActive);
+        pReactBar.classList.toggle('flex', !!state.jamActive);
+      }
       renderAvatarNode(document.getElementById('jam-me-avatar'), getUser(), PROFILE_NAMES[getUser()][0]);
       renderAvatarNode(document.getElementById('jam-partner-avatar'), getPartner(), PROFILE_NAMES[getPartner()][0]);
       renderAvatarNode(document.getElementById('jam-partner-now-avatar'), getPartner(), PROFILE_NAMES[getPartner()][0]);
-      document.getElementById('jam-log').innerHTML = state.jamLogs.length ? state.jamLogs.map(l => `<div>${escapeHtml(l)}</div>`).join('') : '<div class="text-white/40">Событий пока нет</div>';
+      document.getElementById('jam-log').innerHTML = state.jamLogs.length ? state.jamLogs.map(l => {
+        if (typeof l === 'string') return `<div class="text-white/55">${escapeHtml(l)}</div>`;
+        if (l.isChat) return `<div class="rounded-2xl bg-white/10 px-3 py-2"><span class="text-[10px] font-bold text-pink-200">${escapeHtml(l.sender)} · ${l.tm}</span><div class="text-xs text-white mt-0.5">${escapeHtml(l.msg)}</div></div>`;
+        return `<div class="text-[11px] text-white/50"><span class="text-white/35 mr-1.5">${l.tm}</span>${escapeHtml(l.msg)}</div>`;
+      }).join('') : '<div class="text-white/40">Событий и сообщений пока нет</div>';
     }
 
     function renderProfileView() {
@@ -3104,7 +3345,16 @@
         applyAudioSpeed(); broadcastJam({ action: 'sync', trackId: state.currentTrackId, position: audioEl.currentTime, isPlaying: state.isPlaying, speed: state.speed }); checkBadges(); return;
       }
       const reactBtn = e.target.closest('[data-react]');
-      if (reactBtn) { haptic(12); spawnFloatingReaction(reactBtn.dataset.react); broadcastJam({ action: 'react', emoji: reactBtn.dataset.react }); addJamLog(`Ты отправил(а) ${reactBtn.dataset.react}`); return; }
+      if (reactBtn) {
+        const rk = reactBtn.dataset.react;
+        haptic(12);
+        spawnFloatingReaction(rk);
+        broadcastJam({ action: 'react', reactKey: rk }, true);
+        addJamLog(`Ты: реакция «${(JAM_REACTIONS[rk]?.label) || 'Сердце'}»`);
+        return;
+      }
+      const quickBtn = e.target.closest('[data-jam-quick]');
+      if (quickBtn) { sendJamChatMessage(quickBtn.dataset.jamQuick); return; }
       const lyricLine = e.target.closest('.lyric-line');
       if (lyricLine) {
         const t = parseFloat(lyricLine.dataset.lyricTime);
@@ -3295,7 +3545,38 @@
     });
     document.getElementById('btn-change-pin').addEventListener('click', () => openAuthOverlay('change', getUser()));
     document.getElementById('btn-switch-account').addEventListener('click', () => openAuthOverlay('choose'));
-    document.getElementById('btn-toggle-jam').addEventListener('click', () => { state.jamActive = !state.jamActive; broadcastPresence(); checkBadges(); addJamLog(state.jamActive ? 'Ты включил(а) Live Jam' : 'Ты вышел(ла) из Live Jam'); renderJamView(); });
+    document.getElementById('btn-toggle-jam').addEventListener('click', () => {
+      state.jamActive = !state.jamActive;
+      broadcastPresence();
+      checkBadges();
+      if (state.jamActive) {
+        const cur = getCurrentTrack();
+        jamLastSyncLabel = 'Комната открыта · ждём партнёра';
+        broadcastJam({ action: 'invite', trackId: cur?.id || '', title: cur?.title || '', artist: cur?.artist || '', cover: cur?.cover || '' }, true);
+        if (state.playbackQueueIds?.length) broadcastJamQueue();
+        addJamLog('Ты открыл(а) Live Jam');
+      } else {
+        jamLastSyncLabel = 'Точная синхронизация и общая очередь';
+        addJamLog('Ты вышел(ла) из Live Jam');
+      }
+      renderJamView();
+      syncPlaybackUI();
+    });
+    document.getElementById('btn-jam-invite-accept').addEventListener('click', () => { haptic(12); joinPartnerLive(); });
+    document.getElementById('btn-jam-invite-close').addEventListener('click', () => { document.getElementById('jam-invite-toast').classList.remove('show'); });
+    document.getElementById('btn-jam-open-player').addEventListener('click', () => { if (state.currentTrackId) openPlayerSheet(true); });
+    document.getElementById('btn-jam-resync').addEventListener('click', () => { haptic(10); broadcastJam({ action: 'ping_sync' }); showToast('Выравниваем секунду...'); });
+    document.getElementById('btn-jam-send-chat').addEventListener('click', () => {
+      const inp = document.getElementById('jam-chat-input');
+      if (inp && inp.value.trim()) { sendJamChatMessage(inp.value); inp.value = ''; }
+    });
+    document.getElementById('jam-chat-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); document.getElementById('btn-jam-send-chat').click(); }
+    });
+    document.getElementById('btn-player-jam-chat').addEventListener('click', async () => {
+      const msg = await elysionPrompt('Сообщение в Live Jam', '', 'Например: этот припев просто космос', 'Отправить');
+      if (msg && msg.trim()) sendJamChatMessage(msg);
+    });
     document.getElementById('btn-join-partner-live').addEventListener('click', joinPartnerLive);
     document.getElementById('btn-jam-join-partner').addEventListener('click', joinPartnerLive);
     document.getElementById('profile-liked-card').addEventListener('click', () => openPlaylistDetail('my-likes'));
@@ -3395,7 +3676,36 @@
     }, { passive: true });
 
     // Audio & Native Live Alerts (FIXED: reads evt.position in ms!)
-    audioEl.addEventListener('loadedmetadata', () => { updateWaveformVisuals(-1); updateMediaSession(getCurrentTrack()); });
+    audioEl.addEventListener('loadedmetadata', () => {
+      applyPendingJamSeek();
+      updateWaveformVisuals(-1);
+      updateMediaSession(getCurrentTrack());
+    });
+    audioEl.addEventListener('canplay', () => { applyPendingJamSeek(); });
+    audioEl.addEventListener('pause', () => {
+      if (state.isPlaying && !audioEl.ended) {
+        state.isPlaying = false;
+        stopWaveLoop();
+        updateMediaSession(getCurrentTrack());
+        broadcastPresence();
+        if (state.jamActive && !suppressJamBroadcast) {
+          broadcastJam({ action: 'sync', trackId: state.currentTrackId, position: audioEl.currentTime || 0, isPlaying: false, speed: state.speed });
+        }
+        syncPlaybackUI();
+      }
+    });
+    audioEl.addEventListener('play', () => {
+      if (!state.isPlaying && state.currentTrackId) {
+        state.isPlaying = true;
+        if (state.playerOpen) startWaveLoop();
+        updateMediaSession(getCurrentTrack());
+        broadcastPresence();
+        if (state.jamActive && !suppressJamBroadcast) {
+          broadcastJam({ action: 'sync', trackId: state.currentTrackId, position: audioEl.currentTime || 0, isPlaying: true, speed: state.speed });
+        }
+        syncPlaybackUI();
+      }
+    });
     audioEl.addEventListener('timeupdate', () => { if (!state.scrubbing) updateWaveformVisuals(-1); syncActiveLyricLine(audioEl.currentTime || 0, false); syncNativeAndroidMedia(getCurrentTrack(), false); });
     audioEl.addEventListener('ended', () => {
       if (state.sleepMode === 'track') { state.sleepMode = '0'; state.sleepEndTs = 0; pauseTrack(); renderSleepStatus(); showToast('Трек завершился — таймер сна остановлен'); }
@@ -3419,6 +3729,7 @@
         else if (evt.action === 'pause') pauseTrack();
         else if (evt.action === 'next') nextTrack();
         else if (evt.action === 'prev') prevTrack();
+        else if (evt.action === 'like') { if (state.currentTrackId) toggleLike(state.currentTrackId); }
         else if (evt.action === 'seek') {
           const posMs = typeof evt.position === 'number' ? evt.position : evt.positionMs;
           if (typeof posMs === 'number') { audioEl.currentTime = posMs / 1000; updateWaveformVisuals(-1); syncNativeAndroidMedia(getCurrentTrack(), true); }
@@ -3976,7 +4287,7 @@
       ensureQueueArray();
       const curIdx = Math.max(0, state.playbackQueueIds.indexOf(state.currentTrackId));
       state.playbackQueueIds = state.playbackQueueIds.filter(id => id !== trackId);
-      state.playbackQueueIds.splice(curIdx + 1, 0, trackId);
+      state.playbackQueueIds.splice(curIdx + 1, 0, trackId); broadcastJamQueue();
       haptic(12); showToast(`Следующим: «${tr.title}»`);
       if (state.playerOpen && state.playerMode === 'queue') renderQueueStageV2();
     }
@@ -3984,7 +4295,7 @@
       const tr = state.tracks.find(t => t.id === trackId); if (!tr) return;
       ensureQueueArray();
       state.playbackQueueIds = state.playbackQueueIds.filter(id => id !== trackId);
-      state.playbackQueueIds.push(trackId);
+      state.playbackQueueIds.push(trackId); broadcastJamQueue();
       haptic(10); showToast(`Добавлено в конец очереди: «${tr.title}»`);
       if (state.playerOpen && state.playerMode === 'queue') renderQueueStageV2();
     }
@@ -4036,12 +4347,12 @@
       ensureQueueArray();
       if (up) {
         const i = Number(up.dataset.qUp);
-        if (i > 0) { const a = state.playbackQueueIds; [a[i - 1], a[i]] = [a[i], a[i - 1]]; haptic(8); renderQueueStageV2(); }
+        if (i > 0) { const a = state.playbackQueueIds; [a[i - 1], a[i]] = [a[i], a[i - 1]]; haptic(8); broadcastJamQueue(); renderQueueStageV2(); }
       } else if (dn) {
         const i = Number(dn.dataset.qDown);
-        if (i < state.playbackQueueIds.length - 1) { const a = state.playbackQueueIds; [a[i + 1], a[i]] = [a[i], a[i + 1]]; haptic(8); renderQueueStageV2(); }
+        if (i < state.playbackQueueIds.length - 1) { const a = state.playbackQueueIds; [a[i + 1], a[i]] = [a[i], a[i + 1]]; haptic(8); broadcastJamQueue(); renderQueueStageV2(); }
       } else if (rm) {
-        state.playbackQueueIds = state.playbackQueueIds.filter(id => id !== rm.dataset.qDel);
+        state.playbackQueueIds = state.playbackQueueIds.filter(id => id !== rm.dataset.qDel); broadcastJamQueue();
         haptic(8); renderQueueStageV2();
       }
     });
@@ -4638,9 +4949,10 @@
 
 
     // =========================================================================
-    // V2.6: CHANGELOG TIMELINE (v1.0 -> v2.6) & ANDROID APP SHORTCUTS HANDLER
+    // V2.7: CHANGELOG TIMELINE (v1.0 -> v2.7) & ANDROID APP SHORTCUTS HANDLER
     // =========================================================================
     const ELYSION_CHANGELOG = [
+      { v: 'v2.7', name: 'Живой эфир', desc: 'Live Jam 2.0 (точная синхронизация, авто-реконнект, кастомные SVG-реакции прямо в плеере, общая очередь, приглашение в 1 тап и мини-чат), 3 обновлённых виджета для Android и синхронизация Bluetooth-паузы в iOS PWA.' },
       { v: 'v2.6', name: 'Нативная мощь', desc: 'Виджет на рабочий стол ColorOS 17, растягиваемая адаптивная иконка, ярлыки App Shortcuts, умная Bluetooth-пауза, аппаратный звук Android и история обновлений.' },
       { v: 'v2.5', name: 'Четыре облика', desc: '4 стиля плеера (Классика, Постер, Кино, Минимал + Текст), 7 цветовых акцентов, Радио по треку, Pull-to-Refresh, Топ-5 треков и Режим в дороге.' },
       { v: 'v2.4', name: 'Ледяной движок', desc: 'Глубокая оптимизация GPU (ноль нагрева), виртуализация списков, мгновенный кэш текстов, алфавит и обновлённое меню ⋮.' },

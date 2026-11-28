@@ -66,10 +66,11 @@ public class ElysionMediaService extends Service {
         final String artist = intent.getStringExtra("artist") != null ? intent.getStringExtra("artist") : "Elysion";
         final String artUrl = intent.getStringExtra("artwork") != null ? intent.getStringExtra("artwork") : "";
         final boolean isPlaying = intent.getBooleanExtra("isPlaying", false);
+        final boolean isLiked = intent.getBooleanExtra("isLiked", false);
         final long duration = intent.getLongExtra("duration", 0);
         final long position = intent.getLongExtra("position", 0);
 
-        updateMediaNotification(title, artist, cachedArtwork, isPlaying, duration, position);
+        updateMediaNotification(title, artist, cachedArtwork, isPlaying, isLiked, duration, position);
 
         if (!artUrl.isEmpty() && !artUrl.equals(cachedArtUrl)) {
             cachedArtUrl = artUrl;
@@ -82,7 +83,7 @@ public class ElysionMediaService extends Service {
                         Bitmap bmp = BitmapFactory.decodeStream(is);
                         if (bmp != null) {
                             cachedArtwork = bmp;
-                            updateMediaNotification(title, artist, bmp, isPlaying, duration, position);
+                            updateMediaNotification(title, artist, bmp, isPlaying, isLiked, duration, position);
                         }
                     }
                 } catch (Exception ignored) {}
@@ -91,7 +92,7 @@ public class ElysionMediaService extends Service {
         return START_STICKY;
     }
 
-    private void updateMediaNotification(String title, String artist, Bitmap art, boolean isPlaying, long duration, long position) {
+    private void updateMediaNotification(String title, String artist, Bitmap art, boolean isPlaying, boolean isLiked, long duration, long position) {
         MediaMetadataCompat.Builder meta = new MediaMetadataCompat.Builder()
             .putString(MediaMetadataCompat.METADATA_KEY_TITLE, title)
             .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, artist)
@@ -126,7 +127,7 @@ public class ElysionMediaService extends Service {
             .setStyle(new MediaStyle().setMediaSession(mediaSession.getSessionToken()).setShowActionsInCompactView(0, 1, 2));
 
         startForeground(NOTIF_ID, nb.build());
-        ElysionWidgetProvider.updateAll(this, title, artist, isPlaying, cachedArtwork);
+        ElysionWidgetHelper.updateAll(this, title, artist, isPlaying, isLiked, cachedArtwork);
     }
 
     private PendingIntent servicePi(String action, int reqCode) {

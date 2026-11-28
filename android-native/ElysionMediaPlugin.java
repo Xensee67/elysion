@@ -50,6 +50,7 @@ public class ElysionMediaPlugin extends Plugin {
         i.putExtra("artist", call.getString("artist", "Elysion"));
         i.putExtra("artwork", call.getString("artwork", ""));
         i.putExtra("isPlaying", call.getBoolean("isPlaying", false));
+        i.putExtra("isLiked", call.getBoolean("isLiked", false));
         i.putExtra("duration", (long) call.getInt("duration", 0));
         i.putExtra("position", (long) call.getInt("position", 0));
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) getContext().startForegroundService(i);
