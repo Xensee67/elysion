@@ -599,8 +599,8 @@ if os.path.exists('android-native/elysion.keystore'):
 
 bg = 'android/app/build.gradle'
 s = open(bg).read()
-s = re.sub(r'versionCode\s+\d+', 'versionCode 31', s)
-s = re.sub(r'versionName\s+"[^"]+"', 'versionName "3.1"', s)
+s = re.sub(r'versionCode\s+\d+', 'versionCode 32', s)
+s = re.sub(r'versionName\s+"[^"]+"', 'versionName "3.2"', s)
 if 'androidx.media:media:' not in s:
     s = s.replace('dependencies {', 'dependencies {\n    implementation "androidx.media:media:1.7.0"')
 if 'elysion.keystore' not in s and os.path.exists('android/app/elysion.keystore'):
@@ -679,4 +679,4 @@ svc_and_widgets = """
 if 'ElysionMediaService' not in ms:
     ms = ms.replace('</application>', svc_and_widgets)
 open(mf, 'w').write(ms)
-print('ANDROID PATCH V3.1 OK (3 WIDGETS + ADAPTIVE ICON + SHORTCUTS + BLUETOOTH + AUDIOFX)')
+print('ANDROID PATCH V3.2 OK (3 WIDGETS + ADAPTIVE ICON + SHORTCUTS + BLUETOOTH + AUDIOFX)')
