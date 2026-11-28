@@ -219,7 +219,10 @@
       transform: translate3d(0, 100%, 0); transition: transform 330ms cubic-bezier(0.32,0.72,0,1);
       max-height: 84dvh; overflow-y: auto;
     }
+    .sheet-backdrop { overscroll-behavior: contain; touch-action: none; }
+    .sheet-panel { overscroll-behavior: contain; touch-action: pan-y; }
     .sheet-backdrop.is-open .sheet-panel { transform: translate3d(0, 0, 0); }
+    body.sheet-scroll-locked .app-scroll-pane { overflow-y: hidden !important; touch-action: none !important; }
 
     /* Waveform Scrubber */
     .waveform-outer { position: relative; padding-top: 22px; }
@@ -1977,8 +1980,12 @@
       setTimeout(() => { playerAnimating = false; syncWakeLock(); }, 340);
     }
 
-    function openSpringSheet(id) { document.getElementById(id)?.classList.add('is-open'); }
-    function closeSpringSheet(id) { document.getElementById(id)?.classList.remove('is-open'); }
+    function syncSheetScrollLock() {
+      const anyOpen = !!document.querySelector('.sheet-backdrop.is-open');
+      document.body.classList.toggle('sheet-scroll-locked', anyOpen);
+    }
+    function openSpringSheet(id) { document.getElementById(id)?.classList.add('is-open'); syncSheetScrollLock(); }
+    function closeSpringSheet(id) { document.getElementById(id)?.classList.remove('is-open'); syncSheetScrollLock(); }
 
     function navigateTo(view, record = true) {
       if (view === state.activeView && !state.playerOpen) {
@@ -2295,7 +2302,7 @@
         const mapped = state.playbackQueueIds.map(id => state.tracks.find(t => t.id === id)).filter(Boolean);
         if (mapped.length) return mapped;
       }
-      return state.tracks.slice();
+      return sortTrackList(state.tracks);
     }
     function getNeighborTracks() {
       const list = getActiveList(); if (!list.length) return { prev: null, cur: null, next: null };
@@ -3302,9 +3309,9 @@
       const trackRow = e.target.closest('.track-row');
       if (trackRow) {
         const ctx = trackRow.dataset.queueCtx;
-        let qIds = state.tracks.map(t => t.id), ctxName = 'Вся коллекция';
+        let qIds = sortTrackList(state.tracks).map(t => t.id), ctxName = 'Вся коллекция';
         if (ctx && ctx !== 'all') {
-          qIds = getPlaylistTracks(ctx).map(t => t.id);
+          qIds = sortTrackList(getPlaylistTracks(ctx)).map(t => t.id);
           const custom = state.playlists.find(p => p.id === ctx);
           ctxName = custom ? `Плейлист · ${custom.name}` : (ctx === 'matches' ? 'Наши совпадения' : ctx === 'my-likes' ? 'Мне нравится' : 'Вся коллекция');
         }
@@ -3365,7 +3372,7 @@
     // Playlist, Profile, Search, Artist, Track Menu & Player Controls
     document.getElementById('btn-back-from-pl').addEventListener('click', () => navigateTo(state.prevMainTab || 'library', false));
     document.getElementById('btn-pl-play').addEventListener('click', () => {
-      const trs = getPlaylistTracks(state.activePlaylistDetailId);
+      const trs = sortTrackList(getPlaylistTracks(state.activePlaylistDetailId));
       const custom = state.playlists.find(p => p.id === state.activePlaylistDetailId);
       const lbl = custom ? `Плейлист · ${custom.name}` : (state.activePlaylistDetailId === 'matches' ? 'Наши совпадения' : state.activePlaylistDetailId === 'my-likes' ? 'Мне нравится' : 'Вся коллекция');
       if (trs.length) { state.shuffle = false; playTrack(trs[0].id, true, false, trs.map(t => t.id), lbl); openPlayerSheet(true); }
@@ -4090,7 +4097,13 @@
       state.sortMode = btn.dataset.pickSort;
       try { localStorage.setItem('elysion_sort_mode', state.sortMode); } catch {}
       haptic(10); closeSpringSheet('sort-modal');
-      renderLibraryView(); renderPlaylistDetailView();
+      if (state.playContextLabel === 'Вся коллекция') {
+        state.playbackQueueIds = sortTrackList(state.tracks).map(t => t.id);
+      } else if (state.activePlaylistDetailId) {
+        const plTrs = sortTrackList(getPlaylistTracks(state.activePlaylistDetailId));
+        if (plTrs.some(t => t.id === state.currentTrackId)) state.playbackQueueIds = plTrs.map(t => t.id);
+      }
+      renderLibraryView(); renderPlaylistDetailView(); syncPlaybackUI();
     });
 
     // =========================================================================
